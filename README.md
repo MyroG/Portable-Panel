@@ -47,7 +47,7 @@ A few public methods can be called from an external script :
 
 `IsPanelHoldByOneHand()` returns true if the panel is hold with one hand.
 ## License
-MIT
+MIT, see the include LICENSE file
 
 ## Credits
 No need to credit me, but if you want you can credit my VRChat username (MyroP) with or without a link to this GitHub page.
