@@ -51,4 +51,9 @@ MIT, see the include LICENSE file
 
 ## Credits
 No need to credit me, but if you want you can credit my VRChat username (MyroP) with or without a link to this GitHub page.
-		
+
+## Socials
+My VRChat profile : https://vrchat.com/home/user/usr_0d0d4ccf-7352-46bd-b1d1-ec804f0c3490
+My VRCList profile : https://vrclist.com/user/MyroP
+My Twitter/X account : https://x.com/MyroDev or https://twitter.com/MyroDev
+Tip jar: https://www.patreon.com/myrop
