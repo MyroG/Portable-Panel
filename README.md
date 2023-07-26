@@ -1,7 +1,9 @@
-# Portable-Panel
+# Portable VRChat Panel
 A script for a portable panel that can be used in any VRC world.
+In VR, the panel can be opened by using the "Triggers" or the "Grab" gesture with both of your hands.
+On PC, just keep the "Tab" key pressed.
 
-Installation is pretty easy, just attach that script on a GameObject, you can also try the prefab.
+Installation is pretty easy, just attach that script on a GameObject, you can also try the prefab included in the package.
 
 ## Parameters
 
