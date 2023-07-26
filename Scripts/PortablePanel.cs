@@ -50,12 +50,11 @@ namespace myro
 		//This bool is only used to avoid event spams
 		private bool _eventAlreadySend = false;
 
+		private bool _forceOpenPanel = false, _forceClosePanel = false;
+
 		void OnEnable()
 		{
 			_localPlayer = Networking.LocalPlayer;
-			_grabbed = EGrabbed.NONE;
-			_isRightHandTriggered = false;
-			_isLeftHandTriggered = false;
 			ClosePanel();
 		}
 
@@ -71,6 +70,41 @@ namespace myro
 		public bool IsPanelOpen()
 		{
 			return Panel.activeSelf;
+		}
+
+		
+
+		public void ForceClosePanel()
+		{
+			if (IsPanelOpen())
+			{
+				ClosePanel();
+
+				if (_isRightHandTriggered || _isLeftHandTriggered)
+				{
+					_forceClosePanel = true; //this boolean is mostly to make sure that the panel doesn't get reopened at the next frame
+					
+				}
+				_forceOpenPanel = false;
+			}
+		}
+
+		public void ForceOpenPanel()
+		{
+			if (!IsPanelOpen())
+			{
+				OpenPanel();
+				if (_localPlayer.IsUserInVR())
+				{
+					PlacePanelInFrontOfPlayer();
+				}
+				else
+				{
+					//doesn't make much sense to set that value for VR players
+					_forceOpenPanel = true;
+					_forceClosePanel = false;
+				}
+			}
 		}
 
 		public bool IsPanelHoldByOneHand()
@@ -96,16 +130,20 @@ namespace myro
 
 		#region Main code
 
+		private void ClosePanel()
+		{
+			_grabbed = EGrabbed.NONE;
+			_isRightHandTriggered = false;
+			_isLeftHandTriggered = false;
+
+			Panel.SetActive(false);
+			OnPanelClose();
+		}
+
 		private void OpenPanel()
 		{
 			Panel.SetActive(true);
 			OnPanelOpen();
-		}
-
-		private void ClosePanel()
-		{
-			Panel.SetActive(false);
-			OnPanelClose();
 		}
 
 		private void HandleInput(bool value, UdonInputEventArgs args)
@@ -123,7 +161,7 @@ namespace myro
 						_localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).position
 					);
 
-				if (!IsPanelOpen())
+				if (!IsPanelOpen() && !_forceClosePanel)
 				{
 					OpenPanel();
 					_startScale = _startDistanceBetweenTwoHands;
@@ -139,6 +177,7 @@ namespace myro
 				//If the panel is not grabbed anymore, we close the panel under two conditions:
 				//- If the panel became twice as small
 				//- If the panel is smaller than "MinScale"
+				_forceClosePanel = false;
 
 				if (IsPanelOpen() && (
 					   _startScale / 2.0f > _currentScale
@@ -212,14 +251,14 @@ namespace myro
 
 		public void Update()
 		{
-			Vector3 headPos = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
-
+			//In VR, it is more interesting to use Update, so it is still possible to interact with it while holding the panel and moving around with it.
 			if (_localPlayer.IsUserInVR())
 			{
-				//VR
+				Vector3 headPos = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
+
 				if (_grabbed == EGrabbed.NONE)
 				{
-					if (Vector3.Distance(headPos, Panel.transform.position) > MaxDistanceBeforeClosingThePanel)
+					if (IsPanelOpen() && Vector3.Distance(headPos, Panel.transform.position) > MaxDistanceBeforeClosingThePanel)
 					{
 						ClosePanel();
 					}
@@ -245,29 +284,44 @@ namespace myro
 					Panel.transform.forward = -Panel.transform.forward;
 				}
 			}
-			else if (Input.GetKey(KeyCode.Tab))
+		}
+
+		public override void PostLateUpdate()
+		{
+			//On Desktop, it is more interesting to use PostLateUpdate, so the panel doesn't lag behind.
+			if (!_localPlayer.IsUserInVR())
 			{
-				if (!IsPanelOpen())
+				bool tabPressed = Input.GetKey(KeyCode.Tab);
+
+				if (tabPressed || _forceOpenPanel)
 				{
-					Quaternion headRot = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).rotation;
-
-					if (_isLeftHandTriggered)
-						_panelAttachedToHand = VRCPlayerApi.TrackingDataType.LeftHand;
-					else
-						_panelAttachedToHand = VRCPlayerApi.TrackingDataType.RightHand;
-
-					OpenPanel();
-
-					Panel.transform.position = (headPos + headRot * Vector3.forward * .3f);
-					SetPanelScale(PanelScaleOnDesktop);
-					Panel.transform.LookAt(headPos);
-					Panel.transform.forward = -Panel.transform.forward;
+					if (!IsPanelOpen())
+					{
+						OpenPanel();
+					}
+					PlacePanelInFrontOfPlayer();
+					if (tabPressed)
+					{
+						_forceOpenPanel = false;
+					}
+				}
+				else if (!_forceOpenPanel)
+				{
+					ClosePanel();
 				}
 			}
-			else if (IsPanelOpen())
-			{
-				ClosePanel();
-			}
+
+		}
+
+		private void PlacePanelInFrontOfPlayer()
+		{
+			Quaternion headRot = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).rotation;
+			Vector3 headPos = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
+
+			Panel.transform.position = (headPos + headRot * Vector3.forward * .3f);
+			SetPanelScale(PanelScaleOnDesktop);
+			Panel.transform.LookAt(headPos);
+			Panel.transform.forward = -Panel.transform.forward;
 		}
 
 		#endregion
