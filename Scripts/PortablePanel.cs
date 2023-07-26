@@ -23,25 +23,13 @@ namespace myro
 	[UdonBehaviourSyncMode(BehaviourSyncMode.None)]
 	public class PortablePanel : UdonSharpBehaviour
 	{
-		[Header("The portable panel gameObject, this script should not be attached on the panel, but on a separate GameObject")]
+		[Header("See README file for additional help and infos")]
 		public GameObject Panel;
-
-		[Header("Set this value to \"Grab\" if the panel should be opened with the grab gesture, or \"Triggers\" if you prefer trigger buttons")]
 		public EGestureMode GestureMode;
-
-		[Header("You can set the boolean bellow to \"True\" if you want to make the panel grabbable with one hand")]
 		public bool GrabbablePanel = true;
-
-		[Header("The panel can be scaled up as much as you like, but if you want you can set a max scale")]
 		public float MaxScale = 9999.0f;
-
-		[Header("If the panel goes bellow the \"MinScale\", it will automatically be closed")]
 		public float MinScale = 0.1f;
-
-		[Header("If the player walks away from the panel, you can automatically close it by setting a value bellow")]
 		public float MaxDistanceBeforeClosingThePanel = 2f;
-
-		[Header("Scale of the panel for Desktop users")]
 		public float PanelScaleOnDesktop = 0.5f;
 
 		private VRCPlayerApi _localPlayer;
