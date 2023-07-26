@@ -3,7 +3,7 @@ A script for a portable panel that can be used in any VRC world.
 - In VR, the panel can be opened by using the "Triggers" or the "Grab" gesture with both hands.
 - On PC, just keep the "Tab" key pressed.
 
-![showcase]([https://github.com/[username]/[reponame]/blob/[branch]/image.jpg?raw=true](https://raw.githubusercontent.com/MyroG/Portable-Panel/main/Presentation.gif))
+![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Presentation.gif)
 
 Installation is pretty easy, just attach that script on a GameObject, you can also try the prefab included in the package.
 
