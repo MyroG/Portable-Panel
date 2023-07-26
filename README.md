@@ -3,16 +3,18 @@ A script for a portable panel that can be used in any VRC world.
 - In VR, the panel can be opened by using the "Triggers" or the "Grab" gesture with both hands.
 - On PC, just keep the "Tab" key pressed.
 
+Requires UdonSharp.
+
 ![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Presentation.gif)
 
-Installation is pretty easy, just attach that script on a GameObject, you can also try the prefab included in the package.
+Installation is pretty easy, just attach the `PortablePanel` script on a GameObject, you can also try the prefab included in the package.
 
 ## Parameters
 
 ### Panel
-The Panel GameObject, the script should not be attached on the panel, preferably on a separate GameObject, and for best results the panel should have a size of 1 Unity unit (1 unit = 1 meter).
+The Panel GameObject, the script should not be attached on the panel, preferably on a separate GameObject, or as a child GameObject, and for best results the panel should have a size of 1 unit (1 unit = 1 meter).
 
-### VR specific settings
+### VR specific settings :
 
 #### Gesture Mode
 Set this value to \"Grab\" if the panel should be opened with the grab gesture, or \"Triggers\" if you prefer trigger buttons.
@@ -28,20 +30,20 @@ The panel can be scaled up as much as you like, but if you want you can set a ma
 If the panel goes bellow the \"MinScale\", it will automatically close.
 
 #### Max Distance Before Closing The Panel (meters)
-If the player walks away from the panel, you can automatically close it by setting a value bellow.
+The panel will automatically close if the player walks away from it, the distance can be configured there.
 
-### Desktop specific settings
+### Desktop specific settings :
 
 #### Panel Scale On Desktop
 Scale of the panel for Desktop users.
 
 ## Events 
-There are two events that can be overriden : `OnPanelOpen()` and `OnPanelOpen()`, so if you want to execute special actions when the menu opens or closes, you can create a class that inherits from `PortablePanel` and override those events.
+There are two events that can be overriden : `OnPanelOpen()` and `OnPanelOpen()`, so if you want to execute special actions when the menu gets opened or closed, you can create a class that inherits from `PortablePanel` and override those events.
 
 ## Public methods
 A few public methods can be called from an external script :
 
-`ForceClosePanel()` closes the panel even if it is currently getting hold.
+`ForceClosePanel()` closes the panel even if it is currently getting hold or scaled.
 
 `ForceOpenPanel()` opens the panel:
 - On Desktop, the panel will be shown on the screen and can be closed again with the "Tab" key.
