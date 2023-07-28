@@ -7,36 +7,21 @@ Requires UdonSharp.
 
 ![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Presentation.gif)
 
+## Installation
+
 Installation is pretty easy, just attach the `PortablePanel` script on a GameObject, you can also try the prefabs included in the package.
+Once you added the `PortablePanel` component, you'll notice a few settings, I'll explain them bellow:
 
-## Parameters
+| Parameter                            | Explanation                                                                                                          |
+|--------------------------------------|----------------------------------------------------------------------------------------------------------------------|
+| Panel                                | The Panel GameObject, the script should not be attached to the panel directly. It is preferable to attach it to a separate GameObject or as a child GameObject. For best results, the panel should have a size of 1 unit (1 unit = 1 meter). |
+| Gesture Mode                         | Set this value to "Grab" if the panel should be opened with the grab gesture, or "Triggers" if you prefer trigger buttons. Be careful when setting it to "Triggers" as the panel might get accidentally grabbed or scaled when trying to interact with it, especially if it's a menu. |
+| Grabbable Panel                      | Set this boolean to `true` if you want to make the panel grabbable with one hand. It is recommended to set it to `false` if your panel also has a VRCPickup component attached to it. |
+| Max Scale                            | The panel can be scaled up as much as you like, but if you want, you can set a max scale, and the panel will never exceed that scale. |
+| Min Scale                            | If the panel goes below the "MinScale," it will automatically close.                                                  |
+| Max Distance Before Closing The Panel (meters) | The panel will automatically close if the player walks away from it. The distance can be configured here.     |
+| Panel Scale On Desktop               | Desktop-only setting: Scale of the panel for Desktop users.                                                            |
 
-### Panel
-The Panel GameObject, the script should not be attached on the panel, preferably on a separate GameObject, or as a child GameObject, and for best results the panel should have a size of 1 unit (1 unit = 1 meter).
-
-### VR specific settings :
-
-#### Gesture Mode
-Set this value to \"Grab\" if the panel should be opened with the grab gesture, or \"Triggers\" if you prefer trigger buttons.
-Just be careful if you set it on "Triggers" : If your panel is a menu, then the panel might get accidentally grabbed or scaled when trying to interact with it!
-
-####  Grabbable Panel
-You can set this boolean to `true` if you want to make the panel grabbable with one hand.
-I would recommend to set it on `false` if your panel also has a VRCPickup component attached to it.
-
-#### Max Scale 
-The panel can be scaled up as much as you like, but if you want you can set a max scale, and the panel will never exceed that scale.
-
-#### Min Scale
-If the panel goes bellow the \"MinScale\", it will automatically close.
-
-#### Max Distance Before Closing The Panel (meters)
-The panel will automatically close if the player walks away from it, the distance can be configured there.
-
-### Desktop specific settings :
-
-#### Panel Scale On Desktop
-Scale of the panel for Desktop users.
 
 ## Events 
 If you want to implement custom behaviors to the panel, for instance when the panel closes, or when it gets dropped, you can create a class that inherits from `PortablePanel` ann override the events you need to override.
