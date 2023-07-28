@@ -34,7 +34,8 @@ namespace myro
 
 		private VRCPlayerApi _localPlayer;
 		private EGrabbed _grabbed;
-		bool _isRightHandTriggered , _isLeftHandTriggered;
+		private bool _isRightHandTriggered , _isLeftHandTriggered;
+		private float _timeRightHandGesture , _timeLeftHandGesture;
 
 
 		//The variables bellow are used to calculate the position and the scale of the panel once it's hold with both hand
@@ -50,6 +51,7 @@ namespace myro
 		//This bool is only used to avoid event spams
 		private bool _eventAlreadySend = false;
 
+		//Boleans used to open or close the panel without player inputs
 		private bool _forceOpenPanel = false, _forceClosePanel = false;
 
 		void OnEnable()
@@ -58,9 +60,14 @@ namespace myro
 			ClosePanel();
 		}
 
-		private void SetPanelScale(float scale)
+		private void SetPanelScale(float newScale)
 		{
-			Panel.transform.localScale = new Vector3(scale, scale, scale);
+			float oldScale = Panel.transform.localScale.x;
+			if (oldScale != newScale)
+			{
+				Panel.transform.localScale = new Vector3(newScale, newScale, newScale);
+				OnPanelScaled(oldScale, newScale);
+			}
 		}
 
 		#region Public methods
@@ -83,7 +90,6 @@ namespace myro
 				if (_isRightHandTriggered || _isLeftHandTriggered)
 				{
 					_forceClosePanel = true; //this boolean is mostly to make sure that the panel doesn't get reopened at the next frame
-					
 				}
 				_forceOpenPanel = false;
 			}
@@ -116,14 +122,52 @@ namespace myro
 
 		#region Overridable events
 
-		public virtual void OnPanelOpen()
+		/// <summary>
+		/// Gets called when the panel opens
+		/// </summary>
+		///  <returns>True if the panel needs to be opened.
+		/// If you want to open the panel manually, for instance with an animator, then you can `return false;`
+		/// </returns>
+		public virtual bool OnPanelOpening()
 		{
-
+			return true;
 		}
 
-		public virtual void OnPanelClose()
+		/// <summary>
+		/// Gets called when the panel is about to get closed, so it is called when the panel is not closed yet
+		/// </summary>
+		/// <returns>True if the panel needs to be closed.
+		/// If you want to close the panel manually, for instance with an animator, then you can `return false;` instead
+		/// </returns>
+		public virtual bool OnPanelClosing()
 		{
+			return true;
+		}
 
+		/// <summary>
+		/// Gets called when the panel is getting grabbed, either by one hand or with both hands.
+		/// If the parameter "GrabbablePanel" is set to false, the the event will ony be called while scaling the panel 8so when it's grabbed with both hands.
+		/// </summary>
+		public virtual void OnPanelGrab()
+		{
+		}
+
+		/// <summary>
+		/// Gets called when the panel is dropped
+		/// </summary>
+		public virtual void OnPanelDrop()
+		{
+		}
+
+		/// <summary>
+		/// Gets called when the panel gets scaled
+		/// </summary>
+		/// <param name="oldScale">The scale of the panel before it got scaled</param>
+		/// <param name="oldScale">The new scale of the panel</param>
+		/// <example>You could for instance use that method to change what's written on the panel based on the size, or 
+		/// change the color based on the speed it gets scaled.</example>
+		public virtual void OnPanelScaled(float oldScale, float newScale)
+		{
 		}
 
 		#endregion
@@ -136,24 +180,33 @@ namespace myro
 			_isRightHandTriggered = false;
 			_isLeftHandTriggered = false;
 
-			Panel.SetActive(false);
-			OnPanelClose();
+			if (OnPanelClosing())
+			{
+				Panel.SetActive(false);
+			}
 		}
 
 		private void OpenPanel()
 		{
 			Panel.SetActive(true);
-			OnPanelOpen();
+			OnPanelOpening();
 		}
 
 		private void HandleInput(bool value, UdonInputEventArgs args)
 		{
 			if (args.handType == HandType.RIGHT)
+			{
 				_isRightHandTriggered = value;
+				_timeRightHandGesture = Time.time;
+			}
 			else if (args.handType == HandType.LEFT)
+			{
 				_isLeftHandTriggered = value;
+				_timeLeftHandGesture = Time.time;
+			}
 
-			if (_isRightHandTriggered && _isLeftHandTriggered)
+			if (_isRightHandTriggered && _isLeftHandTriggered 
+				&& Mathf.Abs(_timeRightHandGesture - _timeLeftHandGesture) < 0.5f)
 			{
 				//If the grab gesture is used on both hands, we open the panel
 				_startDistanceBetweenTwoHands = Vector3.Distance(
@@ -161,9 +214,12 @@ namespace myro
 						_localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).position
 					);
 
+				OnPanelGrab();
+
 				if (!IsPanelOpen() && !_forceClosePanel)
 				{
 					OpenPanel();
+					
 					_startScale = _startDistanceBetweenTwoHands;
 				}
 				else
@@ -179,6 +235,8 @@ namespace myro
 				//- If the panel is smaller than "MinScale"
 				_forceClosePanel = false;
 
+				OnPanelDrop();
+
 				if (IsPanelOpen() && (
 					   _startScale / 2.0f > _currentScale
 					|| _currentScale < MinScale)
@@ -188,7 +246,7 @@ namespace myro
 				}
 				_grabbed = EGrabbed.NONE;
 			}
-			else
+			else if (_isRightHandTriggered || _isLeftHandTriggered)
 			{
 				//Grab gesture with one hand :
 				//- If the player previously grabbed the panel with both hands, we can add a little delay before "ungrabbing" the panel to avoid accidental 
@@ -197,7 +255,7 @@ namespace myro
 				if (_grabbed == EGrabbed.BOTH_HANDS && !_eventAlreadySend)
 				{
 					_eventAlreadySend = true;
-					SendCustomEventDelayedSeconds(nameof(EventEnableOneHandMovement), 0.2f);
+					SendCustomEventDelayedSeconds(nameof(EventEnableOneHandMovement), 0.1f);
 					return;
 				}
 				else if (GrabbablePanel)
@@ -238,15 +296,27 @@ namespace myro
 
 		private void AttachToHand()
 		{
-			_grabbed = EGrabbed.ONE_HANDED;
-			if (_isLeftHandTriggered)
-				_panelAttachedToHand = VRCPlayerApi.TrackingDataType.LeftHand;
-			else
-				_panelAttachedToHand = VRCPlayerApi.TrackingDataType.RightHand;
 
-			VRCPlayerApi.TrackingData hand = _localPlayer.GetTrackingData(_panelAttachedToHand);
-			_offsetRotation = Quaternion.Inverse(hand.rotation) * Panel.transform.rotation;
-			_offsetPosition = Quaternion.Inverse(hand.rotation) * (Panel.transform.position - hand.position);
+			if (!GrabbablePanel)
+			{
+				_grabbed = EGrabbed.NONE;
+				return;
+			}
+			else
+			{
+				_grabbed = EGrabbed.ONE_HANDED;
+
+				if (_isLeftHandTriggered)
+					_panelAttachedToHand = VRCPlayerApi.TrackingDataType.LeftHand;
+				else
+					_panelAttachedToHand = VRCPlayerApi.TrackingDataType.RightHand;
+
+				VRCPlayerApi.TrackingData hand = _localPlayer.GetTrackingData(_panelAttachedToHand);
+				_offsetRotation = Quaternion.Inverse(hand.rotation) * Panel.transform.rotation;
+				_offsetPosition = Quaternion.Inverse(hand.rotation) * (Panel.transform.position - hand.position);
+
+				OnPanelGrab();
+			}
 		}
 
 		public void Update()
@@ -305,7 +375,7 @@ namespace myro
 						_forceOpenPanel = false;
 					}
 				}
-				else if (!_forceOpenPanel)
+				else if (!_forceOpenPanel && IsPanelOpen())
 				{
 					ClosePanel();
 				}

@@ -38,7 +38,16 @@ The panel will automatically close if the player walks away from it, the distanc
 Scale of the panel for Desktop users.
 
 ## Events 
-There are two events that can be overriden : `OnPanelOpen()` and `OnPanelOpen()`, so if you want to execute special actions when the menu gets opened or closed, you can create a class that inherits from `PortablePanel` and override those events.
+
+| Event name      | Parameters                                        | Behavior                                                                                                                               | Return |
+|-----------------|---------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|--------|
+| OnPanelOpening  |                                               | Gets called when the panel opens.                                                                                                      | True - If the panel needs to be opened. If you want to open the panel manually, you can return `false`. |
+| OnPanelClosing  |                                               | Gets called when the panel is about to get closed, so it is called when the panel is not closed yet.                                   | True - If the panel needs to be closed. If you want to close the panel manually, you can return `false` instead. |
+| OnPanelGrab     |                                               | Gets called when the panel is getting grabbed, either by one hand or with both hands. If `Grabbable Panel` is set to false, only scaling triggers that event. |  |
+| OnPanelDrop     |                                               | Gets called when the panel is dropped.                                                                                                  |  |
+| OnPanelScaled   | float oldScale, float newScale                   | Gets called when the panel gets scaled.                                                                                                 |  |
+
+
 
 ## Public methods
 A few public methods can be called from an external script :
