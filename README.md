@@ -7,7 +7,7 @@ Requires UdonSharp.
 
 ![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Presentation.gif)
 
-Installation is pretty easy, just attach the `PortablePanel` script on a GameObject, you can also try the prefab included in the package.
+Installation is pretty easy, just attach the `PortablePanel` script on a GameObject, you can also try the prefabs included in the package.
 
 ## Parameters
 
@@ -21,7 +21,8 @@ Set this value to \"Grab\" if the panel should be opened with the grab gesture, 
 Just be careful if you set it on "Triggers" : If your panel is a menu, then the panel might get accidentally grabbed or scaled when trying to interact with it!
 
 ####  Grabbable Panel
-You can set this boolean to \"True\" if you want to make the panel grabbable with one hand.
+You can set this boolean to `true` if you want to make the panel grabbable with one hand.
+I would recommend to set it on `false` if your panel also has a VRCPickup component attached to it.
 
 #### Max Scale 
 The panel can be scaled up as much as you like, but if you want you can set a max scale, and the panel will never exceed that scale.
@@ -38,6 +39,7 @@ The panel will automatically close if the player walks away from it, the distanc
 Scale of the panel for Desktop users.
 
 ## Events 
+If you want to implement custom behaviors to the panel, for instance when the panel closes, or when it gets dropped, you can create a class that inherits from `PortablePanel` ann override the events you need to override.
 
 | Event name      | Parameters                                        | Behavior                                                                                                                               | Return |
 |-----------------|---------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|--------|
@@ -52,20 +54,22 @@ Scale of the panel for Desktop users.
 ## Public methods
 A few public methods can be called from an external script :
 
-`ForceClosePanel()` closes the panel even if it is currently getting hold or scaled.
+| Function Name          | Return | Explanation                                                                                                          |
+|------------------------|--------|----------------------------------------------------------------------------------------------------------------------|
+| `ForceClosePanel()`    |        | Closes the panel even if it is currently being held or scaled.                                                      |
+| `ForceOpenPanel()`     |        | Opens the panel:                                                                                                    |
+|                        |        | - On Desktop, the panel will be shown on the screen and can be closed again with the "Tab" key.                   |
+|                        |        | - In VR, the panel will be placed in front of the player's face.                                                    |
+| `IsPanelHoldByOneHand()`| bool  | Returns true if the panel is being held with one hand.                                                              |
 
-`ForceOpenPanel()` opens the panel:
-- On Desktop, the panel will be shown on the screen and can be closed again with the "Tab" key.
-- In VR, the panel will be placed in front of the player's face
-
-`IsPanelHoldByOneHand()` returns true if the panel is hold with one hand.
 ## License
 MIT, see the include LICENSE file
 
 ## Credits
 No need to credit me, but if you want you can credit my VRChat username (MyroP) with or without a link to this GitHub page.
 
-## Socials
+## Socials and contact
+For bug reports or suggestion, please use the "Issue" tab, but you can also contact me on X/Twitter (my DM's are open)
 - My VRChat profile : https://vrchat.com/home/user/usr_0d0d4ccf-7352-46bd-b1d1-ec804f0c3490
 - My VRCList profile : https://vrclist.com/user/MyroP
 - My Twitter/X account : https://x.com/MyroDev or https://twitter.com/MyroDev
