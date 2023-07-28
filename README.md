@@ -57,9 +57,7 @@ A few public methods can be called from an external script :
 | Function Name          | Return | Explanation                                                                                                          |
 |------------------------|--------|----------------------------------------------------------------------------------------------------------------------|
 | `ForceClosePanel()`    |        | Closes the panel even if it is currently being held or scaled.                                                      |
-| `ForceOpenPanel()`     |        | Opens the panel:                                                                                                    |
-|                        |        | - On Desktop, the panel will be shown on the screen and can be closed again with the "Tab" key.                   |
-|                        |        | - In VR, the panel will be placed in front of the player's face.                                                    |
+| `ForceOpenPanel()`     |        | Opens the panel:<br> - On Desktop, the panel will be shown on the screen and can be closed again with the "Tab" key.<br> - In VR, the panel will be placed in front of the player's face. |                                                   |
 | `IsPanelHoldByOneHand()`| bool  | Returns true if the panel is being held with one hand.                                                              |
 
 ## License
