@@ -163,12 +163,8 @@ MonoBehaviour:
   m_text: 'Here is some text, you can put anything you want on this panel.
 
 
-    You
-    can also grab it with one hand.
-
-
-    To close it, just walk away from it, scale
-    it down or throw it away
+    This
+    version dissintegrates when closed, it can also be thown away in VR.
 
 '
   m_isRightToLeft: 0
@@ -519,7 +515,6 @@ MonoBehaviour:
   PanelRigidBody: {fileID: 1064561703729159899}
   ClosingParticleAnimation: {fileID: 5660106240274716371}
   PickupCollider: {fileID: 1173700290675024987}
-  Text: {fileID: 457219765512652134}
 --- !u!114 &1316761751845121394
 MonoBehaviour:
   m_ObjectHideFlags: 0

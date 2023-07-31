@@ -20,6 +20,13 @@ namespace myro
 		Trigger
 	}
 
+	public enum EForceState
+	{
+		NONE,
+		FORCE_CLOSE,
+		FORCE_OPEN
+	}
+
 	[UdonBehaviourSyncMode(BehaviourSyncMode.None)]
 	public class PortablePanel : UdonSharpBehaviour
 	{
@@ -52,7 +59,7 @@ namespace myro
 		private bool _eventAlreadySend = false;
 
 		//Boleans used to open or close the panel without player inputs
-		private bool _forceOpenPanel = false, _forceClosePanel = false;
+		private EForceState _forceStateOfPanel;
 
 		void OnEnable()
 		{
@@ -87,11 +94,12 @@ namespace myro
 			{
 				ClosePanel();
 
-				if (_isRightHandTriggered || _isLeftHandTriggered)
+				if (!_localPlayer.IsUserInVR())
 				{
-					_forceClosePanel = true; //this boolean is mostly to make sure that the panel doesn't get reopened at the next frame
+					//Desktop : this is mostly to make sure that the panel doesn't get reopened if the Desktop player keeps the Tab key pressed
+					//VR : I guess no need to do anything?
+					_forceStateOfPanel = EForceState.FORCE_CLOSE; 
 				}
-				_forceOpenPanel = false;
 			}
 		}
 
@@ -100,15 +108,13 @@ namespace myro
 			if (!IsPanelOpen())
 			{
 				OpenPanel();
-				if (_localPlayer.IsUserInVR())
-				{
-					PlacePanelInFrontOfPlayer();
-				}
-				else
-				{
-					//doesn't make much sense to set that value for VR players
-					_forceOpenPanel = true;
-					_forceClosePanel = false;
+				
+				PlacePanelInFrontOfPlayer();
+
+				if (!_localPlayer.IsUserInVR())
+				{ 
+					//doesn't make much sense to set those values for VR players?
+					_forceStateOfPanel = EForceState.FORCE_OPEN;
 				}
 			}
 		}
@@ -216,7 +222,7 @@ namespace myro
 
 				OnPanelGrab();
 
-				if (!IsPanelOpen() && !_forceClosePanel)
+				if (!IsPanelOpen() && _forceStateOfPanel != EForceState.FORCE_CLOSE)
 				{
 					OpenPanel();
 					
@@ -233,7 +239,7 @@ namespace myro
 				//If the panel is not grabbed anymore, we close the panel under two conditions:
 				//- If the panel became twice as small
 				//- If the panel is smaller than "MinScale"
-				_forceClosePanel = false;
+				_forceStateOfPanel = EForceState.NONE;
 
 				OnPanelDrop();
 
@@ -363,24 +369,31 @@ namespace myro
 			{
 				bool tabPressed = Input.GetKey(KeyCode.Tab);
 
-				if (tabPressed || _forceOpenPanel)
+				if ((tabPressed && _forceStateOfPanel != EForceState.FORCE_CLOSE) || _forceStateOfPanel == EForceState.FORCE_OPEN)
 				{
 					if (!IsPanelOpen())
 					{
 						OpenPanel();
 					}
 					PlacePanelInFrontOfPlayer();
+
 					if (tabPressed)
 					{
-						_forceOpenPanel = false;
+						_forceStateOfPanel = EForceState.NONE;
 					}
 				}
-				else if (!_forceOpenPanel && IsPanelOpen())
+				else if (!tabPressed || _forceStateOfPanel == EForceState.FORCE_CLOSE)
 				{
-					ClosePanel();
+					if (IsPanelOpen())
+					{
+						ClosePanel();
+					}
+					if (!tabPressed)
+					{
+						_forceStateOfPanel = EForceState.NONE;
+					}
 				}
 			}
-
 		}
 
 		private void PlacePanelInFrontOfPlayer()

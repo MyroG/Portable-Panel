@@ -14,12 +14,8 @@ public class PortablePanelWithRigidBody : myro.PortablePanel
 	public Rigidbody PanelRigidBody;
     public ParticleSystem ClosingParticleAnimation;
 	public BoxCollider PickupCollider;
-	public TextMeshProUGUI Text;
 
 	private Rigidbody _particleSystemRB;
-	private int _nbEventCallsGrab;
-	private int _nbEventCallsClosing;
-	private int _nbEventCallsScale;
 
 	void Start()
     {
@@ -33,27 +29,11 @@ public class PortablePanelWithRigidBody : myro.PortablePanel
 		}
 	}
 
-	private void Debug()
-	{
-		Text.text = "Number of OnPanelGrab calls : " + _nbEventCallsGrab.ToString();
-		Text.text += "\nNumber of OnPanelClosing calls : " + _nbEventCallsClosing.ToString();
-		Text.text += "\nNumber of OnPanelScaled calls : " + _nbEventCallsScale.ToString();
-	}
-
 	public override void OnPanelGrab()
 	{
 		//to make sure the panel doesn't uncontrolably fly away when the panel gets dropped, we will set the velocity to 0 once the panel is grabbed
 		PanelRigidBody.velocity = Vector3.zero;
 		PanelRigidBody.angularVelocity = Vector3.zero;
-
-		_nbEventCallsGrab++;
-		Debug();
-	}
-
-	public override void OnPanelScaled(float oldScale, float newScale)
-	{
-		_nbEventCallsScale++;
-		Debug();
 	}
 
 	public override bool OnPanelClosing()
@@ -74,9 +54,6 @@ public class PortablePanelWithRigidBody : myro.PortablePanel
 		//playing the animation
 		ClosingParticleAnimation.Stop();
 		ClosingParticleAnimation.Play();
-
-		_nbEventCallsClosing++;
-		Debug();
 
 		return true; //We want to close the panel
 	}
