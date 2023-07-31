@@ -12,15 +12,17 @@ It can be tested in my Prefab world called "Assets I released" : https://vrchat.
 This package includes two examples :
 
 A basic panel 
-![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Presentation1.gif)
+![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Res/Presentation1.gif)
 
 A more complex example where the panel can be thrown away. Once the player is too far away from the panel, it dissintegrates, which is done with a basic particle animation.
-![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Presentation2.gif)
+![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Res/Presentation2.gif)
 
 ## Installation
 
 Installation is pretty easy, just attach the `PortablePanel` script on a GameObject, you can also try the prefabs included in the package. Do not attach that script directly on the panel, attach it rather on a separate GameObject.
 Once you added the `PortablePanel` component, you'll notice a few settings, I'll explain them bellow:
+
+![Parameters](https://github.com/MyroG/Portable-Panel/blob/main/Res/Parameters.png)
 
 | Parameter                            | Explanation                                                                                                          |
 |--------------------------------------|----------------------------------------------------------------------------------------------------------------------|
