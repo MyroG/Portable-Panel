@@ -244,7 +244,7 @@ namespace myro
 				OnPanelDrop();
 
 				if (IsPanelOpen() && (
-					   _startScale / 2.0f > _currentScale
+					   _startScale / 3.0f > _currentScale
 					|| _currentScale < MinScale)
 				)
 				{
