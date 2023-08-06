@@ -19,6 +19,9 @@ A more complex example where the panel can be thrown away. Once the player is to
 
 ## Installation
 
+Version 1.2 requires VRCSDK 3.2.2 or above.
+Older versions work with older VRCSDKs, but they do not include features related to avatar scaling.
+
 Installation is pretty easy, just attach the `PortablePanel` script on a GameObject, you can also try the prefabs included in the package. Do not attach that script directly on the panel, attach it rather on a separate GameObject.
 Once you added the `PortablePanel` component, you'll notice a few settings, I'll explain them bellow:
 
