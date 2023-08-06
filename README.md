@@ -26,14 +26,15 @@ Once you added the `PortablePanel` component, you'll notice a few settings, I'll
 
 | Parameter                            | Explanation                                                                                                          |
 |--------------------------------------|----------------------------------------------------------------------------------------------------------------------|
-| Panel                                | The Panel GameObject. As mentioned above, the script should not be attached to the panel directly. It is preferable to attach it on a separate GameObject or as a child GameObject. For best results, the panel should have a size of 1 unit (1 unit = 1 meter). |
-| Gesture Mode                         | Set this value to "Grab" if the panel should be opened with the grab gesture, or "Triggers" if you prefer trigger buttons. Be careful when setting it to "Triggers" as the panel might get accidentally grabbed or scaled when trying to interact with it, especially if it's a menu. |
+| Panel                                | The Panel GameObject. As mentioned above, the script should not be attached to the panel directly. It is preferable to attach it on a separate GameObject or as a child GameObject. For best results, the panel should have a size of 1 unit (1 unit = 1 meter). If you need to resize the panel, do not scale the panel directly, resize the child GameObject instead, as the initial scale of the panel will be overriden by the script |
+| Tab On Hold                    | Desktop only setting, by default the player needs to keep the Tab button pressed, which also unlocks the mouse cursor at the same time aand allows the player to click around, this feature can cause issues if the panel has an input field (the player wouldn't be able to interact with the input field), in that case it is recommended to turn that setting off. |
+| Gesture Mode                         | Set this value to "Grab" if the panel should be opened with the grab gesture, "Triggers" if you prefer trigger buttons, or "Both" if the panel should be opened with a combination of both gestures. Be careful when setting it to "Triggers" as the panel might get accidentally grabbed or scaled when trying to interact with it, especially if it's a menu. |
 | Grabbable Panel                      | Set this boolean to `true` if you want to make the panel grabbable with one hand. It is recommended to set it to `false` if your panel also has a VRCPickup component attached to it. |
-| Max Scale                            | The panel can be scaled up as much as you like, but if you want, you can set a max scale, and the panel will never exceed that scale. |
-| Min Scale                            | If the panel goes below the "MinScale," it will automatically close.                                                  |
+| Max Scale                            | The panel can be scaled up as much as you like, but if you want you can set a max scale, and the panel will not exceed that scale. |
+| Min Scale                            | The panel cannot be scaled below the "MinScale", can be useful if your panel contains stuff that cannot be scaled down so much, otherwise you can keep that value low or event set it to 0                                                 |
 | Max Distance Before Closing The Panel (meters) | The panel will automatically close if the player walks away from it. The distance can be configured here.     |
 | Panel Scale On Desktop               | Desktop-only setting: Scale of the panel for Desktop users.                                                            |
-
+| Scale And Distance Relative To Avatar Scale                      | By default, if you set for instance `Max Distance Before Closing The Panel` to 1 meters, the panel will close at that distance, but what if the avatar is 10 meters tall? If you allow  really tall avatars or really small avatars in your world, I would recommend turning that setting on, so the distance gets scaled based on the actual avatar size. This setting also affects `Min Scale`, `Max scale` and `Panel Scale On Desktop`. If the avatar is 1m80 tall, 1m would be equivalent to 1m, but if the avatar is let's say 1m40 tall, then 1m would be equivalent to 1.40/1.80 = 0.70m |
 
 ## Events 
 If you want to implement custom behaviors to the panel, for instance when the panel closes, or when it gets dropped, you can create a class that inherits from `PortablePanel` ann override the events you need to override.
@@ -43,8 +44,9 @@ If you want to implement custom behaviors to the panel, for instance when the pa
 | `OnPanelOpening`  |                                               | Gets called when the panel opens.                                                                                                      | True - If the panel needs to be opened. If you want to open the panel manually, you can return `false`. |
 | `OnPanelClosing`  |                                               | Gets called when the panel is about to get closed, so it is called when the panel is not closed yet.                                   | True - If the panel needs to be closed. If you want to close the panel manually, you can return `false` instead. |
 | `OnPanelGrab`     |                                               | Gets called when the panel is getting grabbed, either by one hand or with both hands. If `Grabbable Panel` is set to false, only scaling triggers that event. |  |
-| `OnPanelDrop `    |                                               | Gets called when the panel is dropped.                                                                                                  |  |
-| `OnPanelScaled`   | float oldScale, float newScale                   | Gets called when the panel gets scaled.                                                                                                 |  |
+| `OnPanelDrop `    |                                               | Gets called when the panel is dropped.|  |
+| `OnPanelScaled`   | float oldScale, float newScale                   | Gets called when the panel gets scaled.|  |
+| `OnStart`   |                    | Gets called on Start. Use it if you need to initialize certain values                                                                                                |  |
 
 
 

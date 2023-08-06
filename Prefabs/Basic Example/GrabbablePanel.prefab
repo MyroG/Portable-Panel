@@ -218,12 +218,14 @@ MonoBehaviour:
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 8874036614593792104}
   Panel: {fileID: 1216727722377721200}
+  TabOnHold: 1
   GestureMode: 0
   GrabbablePanel: 1
   MaxScale: 3
   MinScale: 0.1
   MaxDistanceBeforeClosingThePanel: 2
   PanelScaleOnDesktop: 0.5
+  ScaleAndDistanceRelativeToAvatarScale: 1
 --- !u!114 &8874036614593792104
 MonoBehaviour:
   m_ObjectHideFlags: 0
