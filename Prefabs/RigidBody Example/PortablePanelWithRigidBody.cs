@@ -17,7 +17,7 @@ public class PortablePanelWithRigidBody : myro.PortablePanel
 
 	private Rigidbody _particleSystemRB;
 
-	void Start()
+	public override void OnStart()
     {
 		_particleSystemRB = ClosingParticleAnimation.GetComponent<Rigidbody>();
 
