@@ -12,9 +12,11 @@ It can be tested in my Prefab world called "Assets I released" : https://vrchat.
 This package includes two examples :
 
 A basic panel 
+
 ![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Res/Presentation1.gif)
 
 A more complex example where the panel can be thrown away. Once the player is too far away from the panel, it dissintegrates, which is done with a basic particle animation.
+
 ![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Res/Presentation2.gif)
 
 
