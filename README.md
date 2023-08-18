@@ -9,6 +9,7 @@ It can be tested in my Prefab world called "Assets I released" : https://vrchat.
 
 ## Prefabs
 
+
 This package includes two examples :
 
 A basic panel 
@@ -17,6 +18,9 @@ A basic panel
 A more complex example where the panel can be thrown away. Once the player is too far away from the panel, it dissintegrates, which is done with a basic particle animation.
 ![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Presentation2.gif)
 
+The prefab `AndroidPanelModule` adds an overlay so the Panel can easily be opened and closed on Android devices, it adds a screen space canvas with a button, the panel can be customized if needed.
+ I would recommend to add it into your scene so Android users can open the panel on their device, the field `Panel Instance` at the prefab root needs to reference your panel.
+ 
 ## Installation
 
 Installation is pretty easy, just attach the `PortablePanel` script on a GameObject, you can also try the prefabs included in the package. Do not attach that script directly on the panel, attach it rather on a separate GameObject.
@@ -26,6 +30,7 @@ Once you added the `PortablePanel` component, you'll notice a few settings, I'll
 |--------------------------------------|----------------------------------------------------------------------------------------------------------------------|
 | Panel                                | The Panel GameObject. As mentioned above, the script should not be attached to the panel directly. It is preferable to attach it on a separate GameObject or as a child GameObject. For best results, the panel should have a size of 1 unit (1 unit = 1 meter). |
 | Gesture Mode                         | Set this value to "Grab" if the panel should be opened with the grab gesture, or "Triggers" if you prefer trigger buttons. Be careful when setting it to "Triggers" as the panel might get accidentally grabbed or scaled when trying to interact with it, especially if it's a menu. |
+| Closing Behaviour                         | Set this value to "Closing" if you want to close/hide the panel, set it to "Respawning" if you want the panel to respawn at it's original location. |
 | Grabbable Panel                      | Set this boolean to `true` if you want to make the panel grabbable with one hand. It is recommended to set it to `false` if your panel also has a VRCPickup component attached to it. |
 | Max Scale                            | The panel can be scaled up as much as you like, but if you want, you can set a max scale, and the panel will never exceed that scale. |
 | Min Scale                            | If the panel goes below the "MinScale," it will automatically close.                                                  |
@@ -35,6 +40,7 @@ Once you added the `PortablePanel` component, you'll notice a few settings, I'll
 
 ## Events 
 If you want to implement custom behaviors to the panel, for instance when the panel closes, or when it gets dropped, you can create a class that inherits from `PortablePanel` ann override the events you need to override.
+
 
 | Event name      | Parameters                                        | Behavior                                                                                                                               | Return |
 |-----------------|---------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------|--------|
@@ -47,6 +53,7 @@ If you want to implement custom behaviors to the panel, for instance when the pa
 
 
 ## Public methods
+
 A few public methods can be called from an external script :
 
 | Function Name          | Return | Explanation                                                                                                          |
@@ -54,6 +61,8 @@ A few public methods can be called from an external script :
 | `ForceClosePanel()`    |        | Closes the panel even if it is currently being held or scaled.                                                      |
 | `ForceOpenPanel()`     |        | Opens the panel:<br> - On Desktop, the panel will be shown on the screen and can be closed again with the "Tab" key.<br> - In VR, the panel will be placed in front of the player's face. |                                                   |
 | `IsPanelHoldByOneHand()`| bool  | Returns true if the panel is being held with one hand.                                                              |
+| `SetRespawnPoint(Vector3 position, Quaternion rotation, Vector3 scale)`     |        | Sets the respawn point of the panel, which can be useful if you want to move the panel to a different place. |                                                   |
+| `RespawnPanel`     |        | Respawns the panel, only works  when `Closing Behaviour` is set to `Respawning`, it has a similar behaviour as `ForceClosePanel`, except that `ForceClosePanel` checks if the panel already got closed. |                                                   |
 
 ## License
 MIT, see the include LICENSE file

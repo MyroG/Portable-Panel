@@ -506,12 +506,15 @@ MonoBehaviour:
     SerializationNodes: []
   _udonSharpBackingUdonBehaviour: {fileID: 1316761751845121394}
   Panel: {fileID: 20680779066800382}
+  TabOnHold: 1
   GestureMode: 0
+  CloseBehaviour: 0
   GrabbablePanel: 0
   MaxScale: 3
   MinScale: 0.1
   MaxDistanceBeforeClosingThePanel: 2
   PanelScaleOnDesktop: 0.5
+  ScaleAndDistanceRelativeToAvatarScale: 0
   PanelRigidBody: {fileID: 1064561703729159899}
   ClosingParticleAnimation: {fileID: 5660106240274716371}
   PickupCollider: {fileID: 1173700290675024987}
