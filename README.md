@@ -13,10 +13,10 @@ It can be tested in my Prefab world called "Assets I released" : https://vrchat.
 This package includes two examples :
 
 A basic panel 
-![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Presentation1.gif)
+![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Res/Presentation1.gif)
 
 A more complex example where the panel can be thrown away. Once the player is too far away from the panel, it dissintegrates, which is done with a basic particle animation.
-![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Presentation2.gif)
+![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Res/Presentation2.gif)
 
 The prefab `AndroidPanelModule` adds an overlay so the Panel can easily be opened and closed on Android devices, it adds a screen space canvas with a button, the panel can be customized if needed.
  I would recommend to add it into your scene so Android users can open the panel on their device, the field `Panel Instance` at the prefab root needs to reference your panel.
@@ -25,6 +25,8 @@ The prefab `AndroidPanelModule` adds an overlay so the Panel can easily be opene
 
 Installation is pretty easy, just attach the `PortablePanel` script on a GameObject, you can also try the prefabs included in the package. Do not attach that script directly on the panel, attach it rather on a separate GameObject.
 Once you added the `PortablePanel` component, you'll notice a few settings, I'll explain them bellow:
+
+![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Res/Parameters.png) 
 
 | Parameter                            | Explanation                                                                                                          |
 |--------------------------------------|----------------------------------------------------------------------------------------------------------------------|
