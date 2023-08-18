@@ -21,6 +21,12 @@ namespace myro
 		Both
 	}
 
+	public enum EClosingBehaviour
+	{
+		Closing,
+		Respawning
+	}
+
 	public enum EForceState
 	{
 		NONE,
@@ -28,15 +34,19 @@ namespace myro
 		FORCE_OPEN
 	}
 
+	
+
 	[UdonBehaviourSyncMode(BehaviourSyncMode.None)]
 	public class PortablePanel : UdonSharpBehaviour
 	{
 		[Header("See README file for additional help and infos")]
 		public GameObject Panel;
+		private Transform _panelTransf;
 
 		//public bool ClosedByDefault = true;
 		public bool TabOnHold = true;
 		public EGestureMode GestureMode;
+		public EClosingBehaviour CloseBehaviour;
 		public bool GrabbablePanel = true;
 		public float MaxScale = 9999.0f;
 		public float MinScale = 0.1f;
@@ -66,6 +76,13 @@ namespace myro
 		//Boleans used to open or close the panel without player inputs
 		private EForceState _forceStateOfPanel;
 
+		//Her we are saving the transforms of the panel, so we can respawn it with the original scale.
+		private Vector3 _position;
+		private Quaternion _rotation;
+		private Vector3 _scale;
+
+		private bool _isPanelOpen;
+
 		void OnEnable()
 		{
 			_localPlayer = Networking.LocalPlayer;
@@ -73,23 +90,28 @@ namespace myro
 			_isLeftHandTriggeredGrab = false;
 			_isRightHandTriggeredTrigger = false;
 			_isLeftHandTriggeredTrigger = false;
+			_panelTransf = Panel.transform;
+
+			SetRespawnPoint(_panelTransf.position, 
+				_panelTransf.rotation,
+				_panelTransf.localScale);
 		}
 
 		void Start()
 		{			
 			//if (ClosedByDefault) //not sure if it's really needed
 			//{
-				ClosePanel();
+				CloseOrRespawnPanel();
 			//}
 			OnStart();
 		}
 
 		private void SetPanelScale(float newScale)
 		{
-			float oldScale = Panel.transform.localScale.x;
+			float oldScale = _panelTransf.localScale.x;
 			if (oldScale != newScale)
 			{
-				Panel.transform.localScale = new Vector3(newScale, newScale, newScale);
+				_panelTransf.localScale = new Vector3(newScale, newScale, newScale);
 				OnPanelScaled(oldScale, newScale);
 			}
 		}
@@ -100,7 +122,7 @@ namespace myro
 
 		public bool IsPanelOpen()
 		{
-			return Panel.activeSelf;
+			return _isPanelOpen;
 		}
 
 		
@@ -109,7 +131,7 @@ namespace myro
 		{
 			if (IsPanelOpen())
 			{
-				ClosePanel();
+				CloseOrRespawnPanel();
 
 				if (!_localPlayer.IsUserInVR())
 				{
@@ -139,6 +161,19 @@ namespace myro
 		public bool IsPanelHoldByOneHand()
 		{
 			return _grabbed == EGrabbed.ONE_HANDED;
+		}
+
+		public void SetRespawnPoint(Vector3 position, Quaternion rotation, Vector3 scale)
+		{
+			_position = position;
+			_rotation = rotation;
+			_scale = scale;
+		}
+
+		public void RespawnPanel()
+		{
+			//we currently just need to close it
+			CloseOrRespawnPanel();
 		}
 
 		#endregion
@@ -205,7 +240,7 @@ namespace myro
 
 		#region Main code
 
-		private void ClosePanel()
+		private void CloseOrRespawnPanel()
 		{
 			_grabbed = EGrabbed.NONE;
 			_isRightHandTriggeredGrab = false;
@@ -215,14 +250,34 @@ namespace myro
 
 			if (OnPanelClosing())
 			{
-				Panel.SetActive(false);
+				if (CloseBehaviour == EClosingBehaviour.Closing)
+				{
+					Panel.SetActive(false);
+				}
+				else
+				{
+					RespawnToOriginalLocation();
+				}
+
+				_isPanelOpen = false;
 			}
 		}
 
 		private void OpenPanel()
 		{
-			Panel.SetActive(true);
-			OnPanelOpening();
+			if (OnPanelOpening())
+			{
+				Panel.SetActive(true);
+
+				_isPanelOpen = true;
+			}
+		}
+
+		public void RespawnToOriginalLocation()
+		{
+			_panelTransf.position = _position;
+			_panelTransf.rotation = _rotation;
+			_panelTransf.localScale = _scale;
 		}
 
 		/// <summary>
@@ -236,8 +291,11 @@ namespace myro
 		{
 			if (!ScaleAndDistanceRelativeToAvatarScale)
 				return value;
-
+#if UNITY_EDITOR
+			return value; // A Client Sim bug makes the script crash if "GetAvatarEyeHeightAsMeters" gets called
+#else
 			return _localPlayer.GetAvatarEyeHeightAsMeters() * value / 1.80f;
+#endif
 		}
 
 		private bool IsRightHandTriggered()
@@ -275,7 +333,7 @@ namespace myro
 				}
 				else
 				{
-					_startScale = Panel.transform.localScale.x;
+					_startScale = _panelTransf.localScale.x;
 				}
 				_grabbed = EGrabbed.BOTH_HANDS;
 			}
@@ -292,7 +350,7 @@ namespace myro
 					   _startScale / 3.0f > _currentScale)
 				)
 				{
-					ClosePanel();
+					CloseOrRespawnPanel();
 				}
 				_grabbed = EGrabbed.NONE;
 			}
@@ -308,7 +366,7 @@ namespace myro
 					SendCustomEventDelayedSeconds(nameof(EventEnableOneHandMovement), 0.1f);
 					return;
 				}
-				else if (GrabbablePanel)
+				else if (GrabbablePanel && IsPanelOpen())
 				{
 					AttachToHand();
 				}
@@ -368,7 +426,7 @@ namespace myro
 
 		private bool PanelTooFarAway()
 		{
-			return Vector3.Distance(_localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position, Panel.transform.position)
+			return Vector3.Distance(_localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position, _panelTransf.position)
 				 > ScaleValueToAvatar(MaxDistanceBeforeClosingThePanel);
 		}
 
@@ -390,8 +448,8 @@ namespace myro
 					_panelAttachedToHand = VRCPlayerApi.TrackingDataType.RightHand;
 
 				VRCPlayerApi.TrackingData hand = _localPlayer.GetTrackingData(_panelAttachedToHand);
-				_offsetRotation = Quaternion.Inverse(hand.rotation) * Panel.transform.rotation;
-				_offsetPosition = Quaternion.Inverse(hand.rotation) * (Panel.transform.position - hand.position);
+				_offsetRotation = Quaternion.Inverse(hand.rotation) * _panelTransf.rotation;
+				_offsetPosition = Quaternion.Inverse(hand.rotation) * (_panelTransf.position - hand.position);
 
 				OnPanelGrab();
 			}
@@ -406,7 +464,7 @@ namespace myro
 				{
 					if (IsPanelOpen() && PanelTooFarAway())
 					{
-						ClosePanel();
+						CloseOrRespawnPanel();
 					}
 					return;
 				}
@@ -414,8 +472,8 @@ namespace myro
 				{
 					VRCPlayerApi.TrackingData hand = _localPlayer.GetTrackingData(_panelAttachedToHand);
 
-					Panel.transform.position = (hand.position + (hand.rotation * _offsetPosition));
-					Panel.transform.rotation = (hand.rotation * _offsetRotation);
+					_panelTransf.position = (hand.position + (hand.rotation * _offsetPosition));
+					_panelTransf.rotation = (hand.rotation * _offsetRotation);
 				}
 				else
 				{
@@ -425,10 +483,10 @@ namespace myro
 
 					_currentScale = Mathf.Clamp(_startScale * Vector3.Distance(left, right) / _startDistanceBetweenTwoHands, ScaleValueToAvatar(MinScale), ScaleValueToAvatar(MaxScale));
 
-					Panel.transform.position = ((left + right) / 2.0f);
+					_panelTransf.position = ((left + right) / 2.0f);
 					SetPanelScale(_currentScale);
-					Panel.transform.LookAt(headPos);
-					Panel.transform.forward = -Panel.transform.forward;
+					_panelTransf.LookAt(headPos);
+					_panelTransf.forward = -_panelTransf.forward;
 				}
 			}
 		}
@@ -460,7 +518,7 @@ namespace myro
 					{
 						if (IsPanelOpen())
 						{
-							ClosePanel();
+							CloseOrRespawnPanel();
 						}
 						if (!tabPressed)
 						{
@@ -481,7 +539,7 @@ namespace myro
 					}
 					else if (IsPanelOpen() && (tabPressedDown || _forceStateOfPanel == EForceState.FORCE_CLOSE || PanelTooFarAway()))
 					{
-						ClosePanel();
+						CloseOrRespawnPanel();
 						_forceStateOfPanel = EForceState.NONE;
 					}
 				}
@@ -508,10 +566,10 @@ namespace myro
 				scale = MinScale;
 			}
 
-			Panel.transform.position = (headPos + headRot * Vector3.forward * distance);
+			_panelTransf.position = (headPos + headRot * Vector3.forward * distance);
 			SetPanelScale(scale);
-			Panel.transform.LookAt(headPos);
-			Panel.transform.forward = -Panel.transform.forward;
+			_panelTransf.LookAt(headPos);
+			_panelTransf.forward = -_panelTransf.forward;
 		}
 
 		#endregion
