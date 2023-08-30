@@ -99,10 +99,10 @@ namespace myro
 
 		public override void OnPlayerJoined(VRCPlayerApi player)
 		{			
-			//if (ClosedByDefault) //not sure if it's really needed
-			//{
+			if (player.isLocal) //not sure if it's really needed
+			{
 				CloseOrRespawnPanel();
-			//}
+			}
 			OnStart();
 		}
 
