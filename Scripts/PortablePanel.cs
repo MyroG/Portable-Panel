@@ -97,7 +97,7 @@ namespace myro
 				_panelTransf.localScale);
 		}
 
-		void Start()
+		public override void OnPlayerJoined(VRCPlayerApi player)
 		{			
 			//if (ClosedByDefault) //not sure if it's really needed
 			//{
