@@ -83,6 +83,9 @@ namespace myro
 		private bool _isPanelOpen;
 		private bool _init;
 
+		private const float TIME_INTERVAL_HAND_GESTURE = 0.15f;
+		private const float MAX_DISTANCE_HAND_GESTURE = 0.3f;
+
 		void OnEnable()
 		{
 			_localPlayer = Networking.LocalPlayer;
@@ -289,7 +292,7 @@ namespace myro
 		protected float ScaleValueToAvatar(float value)
 		{
 #if UNITY_EDITOR
-			return value; // A Client Sim bug makes the script crash if "GetAvatarEyeHeightAsMeters" gets called
+			return value; // A Client Sim bug makes the script crash if "GetAvatarEyeHeightAsMeters" gets called, temporary fix until GetAvatarEyeHeightAsMeters is fully exposed in ClientSim...
 #else
 			return _localPlayer.GetAvatarEyeHeightAsMeters() * value / 1.80f;
 #endif
@@ -317,11 +320,11 @@ namespace myro
 					);
 
 			if (IsRightHandTriggered() && IsLeftHandTriggered()
-				&& Mathf.Abs(_timeRightHandGesture - _timeLeftHandGesture) < 0.2f
-				&& ScaleValueToAvatar(distanceBetweenBothHands) < 0.15f)
+				&& Mathf.Abs(_timeRightHandGesture - _timeLeftHandGesture) < TIME_INTERVAL_HAND_GESTURE
+				&& (distanceBetweenBothHands < ScaleValueToAvatar(MAX_DISTANCE_HAND_GESTURE)  || IsPanelOpen()))
 			{
 				//If the grab gesture is used on both hands, we open the panel
-				_startDistanceBetweenTwoHands = distanceBetweenBothHands;
+				_startDistanceBetweenTwoHands = distanceBetweenBothHands; 
 
 				OnPanelGrab();
 
