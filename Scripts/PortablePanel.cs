@@ -258,9 +258,8 @@ namespace myro
 				{
 					RespawnToOriginalLocation();
 				}
-
-				_isPanelOpen = false;
 			}
+			_isPanelOpen = false;
 		}
 
 		private void OpenPanel()
@@ -268,9 +267,8 @@ namespace myro
 			if (OnPanelOpening())
 			{
 				Panel.SetActive(true);
-
-				_isPanelOpen = true;
 			}
+			_isPanelOpen = true;
 		}
 
 		public void RespawnToOriginalLocation()
@@ -315,7 +313,7 @@ namespace myro
 		private void HandleInput(bool value, UdonInputEventArgs args)
 		{
 			if (IsRightHandTriggered() && IsLeftHandTriggered()
-				&& Mathf.Abs(_timeRightHandGesture - _timeLeftHandGesture) < 0.5f)
+				&& Mathf.Abs(_timeRightHandGesture - _timeLeftHandGesture) < 0.2f)
 			{
 				//If the grab gesture is used on both hands, we open the panel
 				_startDistanceBetweenTwoHands = Vector3.Distance(
