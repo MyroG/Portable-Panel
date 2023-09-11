@@ -52,7 +52,6 @@ namespace myro
 		public float MinScale = 0.1f;
 		public float MaxDistanceBeforeClosingThePanel = 2f;
 		public float PanelScaleOnDesktop = 0.5f;
-		public bool ScaleAndDistanceRelativeToAvatarScale = false;
 		private VRCPlayerApi _localPlayer;
 		private EGrabbed _grabbed;
 		private bool _isRightHandTriggeredGrab , _isLeftHandTriggeredGrab;
@@ -82,6 +81,7 @@ namespace myro
 		private Vector3 _scale;
 
 		private bool _isPanelOpen;
+		private bool _init;
 
 		void OnEnable()
 		{
@@ -97,13 +97,14 @@ namespace myro
 				_panelTransf.localScale);
 		}
 
-		void Start()
-		{			
-			//if (ClosedByDefault) //not sure if it's really needed
-			//{
+		public override void OnPlayerJoined(VRCPlayerApi player)
+		{
+			if (player.isLocal)
+			{
 				CloseOrRespawnPanel();
-			//}
-			OnStart();
+				OnStart();
+				_init = true;
+			}
 		}
 
 		private void SetPanelScale(float newScale)
@@ -287,8 +288,6 @@ namespace myro
 		/// <returns></returns>
 		protected float ScaleValueToAvatar(float value)
 		{
-			if (!ScaleAndDistanceRelativeToAvatarScale)
-				return value;
 #if UNITY_EDITOR
 			return value; // A Client Sim bug makes the script crash if "GetAvatarEyeHeightAsMeters" gets called
 #else
@@ -312,14 +311,17 @@ namespace myro
 
 		private void HandleInput(bool value, UdonInputEventArgs args)
 		{
-			if (IsRightHandTriggered() && IsLeftHandTriggered()
-				&& Mathf.Abs(_timeRightHandGesture - _timeLeftHandGesture) < 0.2f)
-			{
-				//If the grab gesture is used on both hands, we open the panel
-				_startDistanceBetweenTwoHands = Vector3.Distance(
+			float distanceBetweenBothHands = Vector3.Distance(
 						_localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).position,
 						_localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).position
 					);
+
+			if (IsRightHandTriggered() && IsLeftHandTriggered()
+				&& Mathf.Abs(_timeRightHandGesture - _timeLeftHandGesture) < 0.2f
+				&& ScaleValueToAvatar(distanceBetweenBothHands) < 0.15f)
+			{
+				//If the grab gesture is used on both hands, we open the panel
+				_startDistanceBetweenTwoHands = distanceBetweenBothHands;
 
 				OnPanelGrab();
 
@@ -373,6 +375,8 @@ namespace myro
 
 		public override void InputGrab(bool value, UdonInputEventArgs args)
 		{
+			if (!_init) return;
+
 			if (!_localPlayer.IsUserInVR() || GestureMode == EGestureMode.Trigger)
 			{
 				return;
@@ -394,6 +398,8 @@ namespace myro
 
 		public override void InputUse(bool value, UdonInputEventArgs args)
 		{
+			if (!_init) return;
+
 			if (!_localPlayer.IsUserInVR() || GestureMode == EGestureMode.Grab)
 			{
 				return;
@@ -430,7 +436,6 @@ namespace myro
 
 		private void AttachToHand()
 		{
-
 			if (!GrabbablePanel)
 			{
 				_grabbed = EGrabbed.NONE;
@@ -455,6 +460,8 @@ namespace myro
 
 		public void Update()
 		{
+			if (!_init) return;
+
 			//In VR, it is more interesting to use Update, so it is still possible to interact with it while holding the panel and moving around with it.
 			if (_localPlayer.IsUserInVR())
 			{
@@ -491,6 +498,8 @@ namespace myro
 
 		public override void PostLateUpdate()
 		{
+			if (!_init) return;
+
 			//On Desktop, it is more interesting to use PostLateUpdate, so the panel doesn't lag behind.
 			if (!_localPlayer.IsUserInVR())
 			{
@@ -551,7 +560,7 @@ namespace myro
 
 			float distance = ScaleValueToAvatar(0.3f);
 			float scale = ScaleValueToAvatar(PanelScaleOnDesktop);
-			if (ScaleAndDistanceRelativeToAvatarScale && distance < 0.08f)
+			if (distance < 0.08f)
 			{
 				//If the avatar is really small, we need to place the menu a bit further away so it doesn't get clipped by the camera
 				distance = 0.08f;
