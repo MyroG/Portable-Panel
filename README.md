@@ -1,6 +1,6 @@
 # Portable VRChat Panel
 A script for a customizable portable panel that can be used in any VRC world. You can use it to create menus, portable video players etc.
-- In VR, the panel can be opened by using the "Triggers" or the "Grab" gesture with both hands.
+- In VR, put your hands close together, then use the "Triggers" or the "Grab" gesture to open the menu.
 - On PC, just keep the "Tab" key pressed.
 
 Requires UdonSharp.
@@ -31,6 +31,8 @@ Once you added the `PortablePanel` component, you'll notice a few settings, I'll
 
 ![Parameters](https://github.com/MyroG/Portable-Panel/blob/main/Res/Parameters.png)
 
+Certain settings like `Max Scale`, `Min Scale`, `Max Distance Before Closing The Panel`, and `Panel Scale On Desktop` are all based on real-world measurements, like meters you'd use in your room, rather than Unity's internal units. These values automatically adjust based on the size of your avatar. So, for example, if you set `Max Distance Before Closing The Panel` to 5 meters, and your avatar is 1m80 tall, the panel will close when it's 5 meters away from your avatar. But if your avatar is smaller, say 90cm, the panel will close at 2m50, which is half the distance. From your point of view as a player, it will still feel like the panel is closing at 5 meters, even though it adapts to your avatar's size
+
 | Parameter                            | Explanation                                                                                                          |
 |--------------------------------------|----------------------------------------------------------------------------------------------------------------------|
 | Panel                                | The Panel GameObject. As mentioned above, the script should not be attached to the panel directly. It is preferable to attach it on a separate GameObject or as a child GameObject. For best results, the panel should have a size of 1 unit (1 unit = 1 meter). If you need to resize the panel, do not scale the panel directly, resize the child GameObject instead, as the initial scale of the panel will be overriden by the script |
@@ -40,9 +42,11 @@ Once you added the `PortablePanel` component, you'll notice a few settings, I'll
 | Grabbable Panel                      | Set this boolean to `true` if you want to make the panel grabbable with one hand. It is recommended to set it to `false` if your panel also has a VRCPickup component attached to it. |
 | Max Scale                            | The panel can be scaled up as much as you like, but if you want you can set a max scale, and the panel will not exceed that scale. |
 | Min Scale                            | The panel cannot be scaled below the "MinScale", can be useful if your panel contains stuff that cannot be scaled down so much, otherwise you can keep that value low or event set it to 0                                                 |
-| Max Distance Before Closing The Panel (meters) | The panel will automatically close if the player walks away from it. The distance can be configured here.     |
+| Max Distance Before Closing The Panel | The panel will automatically close if the player walks away from it. The distance can be configured here.     |
 | Panel Scale On Desktop               | Desktop-only setting: Scale of the panel for Desktop users.                                                            |
-| Scale And Distance Relative To Avatar Scale                      | By default, if you set for instance `Max Distance Before Closing The Panel` to 1 meters, the panel will close at that distance, but what if the avatar is 10 meters tall? If you allow  really tall avatars or really small avatars in your world, I would recommend turning that setting on, so the distance gets scaled based on the actual avatar size. This setting also affects `Min Scale`, `Max scale` and `Panel Scale On Desktop`. If the avatar is 1m80 tall, 1m would be equivalent to 1m, but if the avatar is let's say 1m40 tall, then 1m would be equivalent to 1.40/1.80 = 0.70m |
+| Delay Initialisation                 | This is an ugly hack to prevent certain prefabs to break.<br/>
+When you launch the instance, the panel gets automatically hidden from the player, and that during the loading screen. In most cases, that shouldn't cause any issues, but hiding the panel disables any script that is attached to that panel, which can break certain scripts that really need to get initialised during the loading screen. For instance "AliceD" noticed that certain video player controls attached to the panel could break because of that, a big thanks to AliceD for pointing that out.
+If that happens, you can check that checkbox, this will initialise the panel shortly before the loading screen ends, and ensure that most prefabs attached to that panel will initialise properly, the drawback is that you cannot disable the `PortablePanel` script at the start of the world, as it will break the script...|
 
 The prefab `AndroidPanelModule` adds an overlay so the Panel can easily be opened and closed on Android devices, it adds a screen space canvas with a button, the panel can be customized if needed.
  I would recommend to add it into your scene so Android users can open the panel on their device, the field `Panel Instance` at the prefab root needs to reference your panel.
@@ -71,6 +75,11 @@ A few public methods can be called from an external script :
 | `IsPanelHoldByOneHand()`| bool  | Returns true if the panel is being held with one hand.                                                              |
 | `SetRespawnPoint(Vector3 position, Quaternion rotation, Vector3 scale)`     |        | Sets the respawn point of the panel, which can be useful if you want to move the panel to a different place. |                                                   |
 | `RespawnPanel`     |        | Respawns the panel, only works  when `Closing Behaviour` is set to `Respawning`, it has a similar behaviour as `ForceClosePanel`, except that `ForceClosePanel` checks if the panel already got closed. |                                                   |
+
+## Constants
+I use two contants I didn't exposed in the inspector, because I didn't wanted to fill up the inspector with parameters no one will change, but if needed you can change them.
+- MAX_DISTANCE_HAND_GESTURE : Max distance between both hands to trigger a panel opening, it is set at 30cm, so to open the panel the distance between your hands should not exceed 30 centimeters.
+- TIME_INTERVAL_HAND_GESTURE : To open the panel and to scale it, the right and left hand gestures should occur with a time gap of less than the time given by that constant, it is set to 0.15 second.
 
 ## License
 MIT, see the include LICENSE file
