@@ -37,6 +37,7 @@ namespace myro
 	
 
 	[UdonBehaviourSyncMode(BehaviourSyncMode.None)]
+	[DefaultExecutionOrder(500)]
 	public class PortablePanel : UdonSharpBehaviour
 	{
 		[Header("See README file for additional help and infos")]
@@ -52,6 +53,12 @@ namespace myro
 		public float MinScale = 0.1f;
 		public float MaxDistanceBeforeClosingThePanel = 2f;
 		public float PanelScaleOnDesktop = 0.5f;
+
+
+		[Header("Advanced settings, change them only if you really need to")]
+		[SerializeField]
+		private bool _delayInitialisation = false;
+
 		private VRCPlayerApi _localPlayer;
 		private EGrabbed _grabbed;
 		private bool _isRightHandTriggeredGrab , _isLeftHandTriggeredGrab;
@@ -100,14 +107,23 @@ namespace myro
 				_panelTransf.localScale);
 		}
 
+		private void Start()
+		{
+			if (!_delayInitialisation)
+				Initialisation();
+		}
+
 		public override void OnPlayerJoined(VRCPlayerApi player)
 		{
-			if (player.isLocal)
-			{
-				CloseOrRespawnPanel();
-				OnStart();
-				_init = true;
-			}
+			if (_delayInitialisation && player.isLocal)
+				Initialisation();
+		}
+
+		public void Initialisation()
+		{
+			CloseOrRespawnPanel();
+			OnStart();
+			_init = true;
 		}
 
 		private void SetPanelScale(float newScale)
