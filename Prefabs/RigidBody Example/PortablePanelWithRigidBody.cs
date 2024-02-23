@@ -17,6 +17,12 @@ public class PortablePanelWithRigidBody : myro.PortablePanel
 
 	private Rigidbody _particleSystemRB;
 
+	private void StopPanel()
+	{
+		PanelRigidBody.velocity = Vector3.zero;
+		PanelRigidBody.angularVelocity = Vector3.zero;
+	}
+
 	public override void OnStart()
     {
 		_particleSystemRB = ClosingParticleAnimation.GetComponent<Rigidbody>();
@@ -32,8 +38,7 @@ public class PortablePanelWithRigidBody : myro.PortablePanel
 	public override void OnPanelGrab()
 	{
 		//to make sure the panel doesn't uncontrolably fly away when the panel gets dropped, we will set the velocity to 0 once the panel is grabbed
-		PanelRigidBody.velocity = Vector3.zero;
-		PanelRigidBody.angularVelocity = Vector3.zero;
+		StopPanel();
 	}
 
 	public override bool OnPanelClosing()
@@ -50,6 +55,8 @@ public class PortablePanelWithRigidBody : myro.PortablePanel
 			_particleSystemRB.velocity = PanelRigidBody.velocity;
 			_particleSystemRB.angularVelocity = PanelRigidBody.angularVelocity;
 		}
+
+		StopPanel();
 
 		//playing the animation
 		ClosingParticleAnimation.Stop();
