@@ -514,7 +514,7 @@ MonoBehaviour:
   MinScale: 0.1
   MaxDistanceBeforeClosingThePanel: 2
   PanelScaleOnDesktop: 0.5
-  ScaleAndDistanceRelativeToAvatarScale: 0
+  _delayInitialisation: 0
   PanelRigidBody: {fileID: 1064561703729159899}
   ClosingParticleAnimation: {fileID: 5660106240274716371}
   PickupCollider: {fileID: 1173700290675024987}
