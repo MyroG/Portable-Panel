@@ -94,12 +94,11 @@ namespace myro
 
 		private const float TIME_INTERVAL_HAND_GESTURE = 0.15f;
 		private const float MAX_DISTANCE_HAND_GESTURE = 0.3f;
-		private const float PLACEMENT_DISTANCE = 0.3f;
+		private const float PLACEMENT_DISTANCE_FROM_HEAD = 0.3f;
+		private const float CLOSING_HAND_DISTANCE = 0.15f;
 
 		void OnEnable()
 		{
-			_isUsingViveControllers = IsViveController();
-
 			_localPlayer = Networking.LocalPlayer;
 			_isRightHandTriggeredGrab = false;
 			_isLeftHandTriggeredGrab = false;
@@ -110,6 +109,8 @@ namespace myro
 
 		private void Start()
 		{
+			_isUsingViveControllers = IsViveController();
+
 			SetRespawnPoint(_panelTransf.position,
 				_panelTransf.rotation,
 				_panelTransf.localScale);
@@ -149,9 +150,9 @@ namespace myro
 		#region Public methods
 
 		/// <summary>
-		/// 
+		/// Sets the "pickupable" state of your panel. This will also work for VRCPickups
 		/// </summary>
-		/// <param name="newGrabState"></param>
+		/// <param name="newPickupableState">The new pickupable state</param>
 		public void SetPickupable(bool newPickupableState)
 		{
 			_isPickupable = newPickupableState;
@@ -190,7 +191,7 @@ namespace myro
 			}
 		}
 
-		public void ForceOpenPanel(float unscaledDistance = PLACEMENT_DISTANCE)
+		public void ForceOpenPanel(float unscaledDistance = PLACEMENT_DISTANCE_FROM_HEAD)
 		{
 			if (!IsPanelOpen())
 			{
@@ -390,9 +391,7 @@ namespace myro
 
 				OnPanelDrop();
 
-				if (IsPanelOpen() && (
-					   _startScale / 3.0f > _currentScale)
-				)
+				if (IsPanelOpen() && distanceBetweenBothHands < ScaleValueToAvatar(CLOSING_HAND_DISTANCE))
 				{
 					CloseOrRespawnPanel();
 				}
@@ -630,13 +629,13 @@ namespace myro
 			}
 		}
 
-		private void PlacePanelInFrontOfPlayer(float unscaledDistance = PLACEMENT_DISTANCE)
+		private void PlacePanelInFrontOfPlayer(float unscaledDistance = PLACEMENT_DISTANCE_FROM_HEAD)
 		{
 			Quaternion headRot = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).rotation;
 			Vector3 headPos = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
 
 			float distance = ScaleValueToAvatar(unscaledDistance);
-			float scale = ScaleValueToAvatar(PanelScaleOnDesktop) * unscaledDistance / PLACEMENT_DISTANCE;
+			float scale = ScaleValueToAvatar(PanelScaleOnDesktop) * unscaledDistance / PLACEMENT_DISTANCE_FROM_HEAD;
 			if (distance < 0.08f)
 			{
 				//If the avatar is really small, we need to place the menu a bit further away so it doesn't get clipped by the camera

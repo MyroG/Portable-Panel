@@ -38,6 +38,7 @@ In the folder `Assets/Myorp/PortablePanel`, you'll find two prefabs :
 ![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Res/PanelHierarchy.png)
 3) Add your panel as a child of the GameObject `[ADD YOUR PANEL AS A CHILD OF THIS GAMEOBJECT]`, place it in a way so it matches the placeholder panel (which is named `[DELETE THIS]`)
 4) You can delete the `[DELETE THIS]` GameObject (You can also just hide the GameObject if you do not want to delete it)
+5) If you're using the ThrowablePanel prefab, and your panel already has a VRCPickup component, remove that component, the `[ADD YOUR PANEL AS A CHILD OF THIS GAMEOBJECT]` GameObject already has the VRCPickup component.
 
 ### More difficult/Manual installation
 
@@ -112,7 +113,8 @@ A few public methods can be called from an external script :
 I use three contants I didn't exposed in the inspector, because I didn't wanted to fill up the inspector with parameters no one will change, but if needed you can change them directly in the code.
 - MAX_DISTANCE_HAND_GESTURE : Max distance between both hands to trigger a panel opening, it is set at 30cm, so to open the panel the distance between your hands should not exceed 30 centimeters.
 - TIME_INTERVAL_HAND_GESTURE : To open the panel and to scale it, the right and left hand gestures should occur with a time gap of less than the time given by that constant, it is set to 0.15 second.
-- PLACEMENT_DISTANCE : The default distance the panel gets opened on Desktop, do not set it to 0.
+- PLACEMENT_DISTANCE_FROM_HEAD : The default distance the panel gets opened on Desktop, do not set it to 0.
+- CLOSING_HAND_DISTANCE : If the distance between both hands is smaller than the value of this const variable, then the panel will close. Note that this variable is scaled based on the size of the avatar.
 
 ## License
 MIT, see the include LICENSE file
