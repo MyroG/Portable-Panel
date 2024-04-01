@@ -34,10 +34,10 @@ In the folder `Assets/Myorp/PortablePanel`, you'll find two prefabs :
 - `ThrowablePanel` is a version that uses a VRCPickup component, it can be thrown and dissintegrates when the panel gets too far away.
 
 1) Open the prefab of your choice, you can also duplicate the prefab if you do not want to override the one present in the folder
-2) The hierarchie looks like this 
+2) The hierarchie looks like this : <br>
 ![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Res/PanelHierarchy.PNG)
 3) Add your panel as a child of the GameObject `[ADD YOUR PANEL AS A CHILD OF THIS GAMEOBJECT]`, place it in a way so it matches the placeholder panel (which is named `[DELETE THIS]`)
-4) You can delete the `[DELETE THIS]` GameObject (You can also just hide the GameObject if you do not want to delete it)
+4) You can now delete the `[DELETE THIS]` GameObject (You can also just hide the GameObject if you do not want to delete it).
 5) If you're using the ThrowablePanel prefab, and your panel already has a VRCPickup component, remove that component, the `[ADD YOUR PANEL AS A CHILD OF THIS GAMEOBJECT]` GameObject already has the VRCPickup component.
 
 ### More difficult/Manual installation
