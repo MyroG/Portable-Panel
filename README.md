@@ -35,7 +35,7 @@ In the folder `Assets/Myorp/PortablePanel`, you'll find two prefabs :
 
 1) Open the prefab of your choice, you can also duplicate the prefab if you do not want to override the one present in the folder
 2) The hierarchie looks like this 
-![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Res/PanelHierarchy.png)
+![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Res/PanelHierarchy.PNG)
 3) Add your panel as a child of the GameObject `[ADD YOUR PANEL AS A CHILD OF THIS GAMEOBJECT]`, place it in a way so it matches the placeholder panel (which is named `[DELETE THIS]`)
 4) You can delete the `[DELETE THIS]` GameObject (You can also just hide the GameObject if you do not want to delete it)
 5) If you're using the ThrowablePanel prefab, and your panel already has a VRCPickup component, remove that component, the `[ADD YOUR PANEL AS A CHILD OF THIS GAMEOBJECT]` GameObject already has the VRCPickup component.
@@ -55,7 +55,7 @@ If your panel is a VRCPickup :
 
 ### Android Smartphone
 
-![Parameters](https://github.com/MyroG/Portable-Panel/blob/main/Res/Android.png)
+![Parameters](https://github.com/MyroG/Portable-Panel/blob/main/Res/Android.PNG)
 
 The prefab `AndroidPanelModule` adds an overlay so the Panel can easily be opened and closed on Android devices, it adds a screen space canvas with a button, the android panel can be customized if needed.
 I would recommend to add it into your scene so Android users can open the panel on their device, the field `Portable Panel Instance` needs to reference your panel.
