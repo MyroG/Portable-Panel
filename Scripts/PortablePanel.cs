@@ -47,7 +47,9 @@ namespace myro
 		public bool TabOnHold = true;
 		public EGestureMode GestureMode;
 		public EClosingBehaviour CloseBehaviour;
-		public bool GrabbablePanel = true;
+		private PortablePanelPickupModule _pickupModule;
+		[SerializeField] private bool _isPickupable = true;
+
 		public float MaxScale = 9999.0f;
 		public float MinScale = 0.1f;
 		public float MaxDistanceBeforeClosingThePanel = 2f;
@@ -88,26 +90,30 @@ namespace myro
 
 		private bool _isPanelOpen;
 		private bool _init;
+		private bool _isUsingViveControllers;
 
 		private const float TIME_INTERVAL_HAND_GESTURE = 0.15f;
 		private const float MAX_DISTANCE_HAND_GESTURE = 0.3f;
+		private const float PLACEMENT_DISTANCE = 0.3f;
 
 		void OnEnable()
 		{
+			_isUsingViveControllers = IsViveController();
+
 			_localPlayer = Networking.LocalPlayer;
 			_isRightHandTriggeredGrab = false;
 			_isLeftHandTriggeredGrab = false;
 			_isRightHandTriggeredTrigger = false;
 			_isLeftHandTriggeredTrigger = false;
-			_panelTransf = Panel.transform;
-
-			SetRespawnPoint(_panelTransf.position, 
-				_panelTransf.rotation,
-				_panelTransf.localScale);
+			_panelTransf = Panel.transform;	
 		}
 
 		private void Start()
 		{
+			SetRespawnPoint(_panelTransf.position,
+				_panelTransf.rotation,
+				_panelTransf.localScale);
+
 			if (!_delayInitialisation)
 				Initialisation();
 		}
@@ -135,9 +141,32 @@ namespace myro
 			}
 		}
 
+		public void SetPickupModule(PortablePanelPickupModule pickupModule)
+		{
+			_pickupModule = pickupModule;
+		}
+
 		#region Public methods
 
-
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="newGrabState"></param>
+		public void SetPickupable(bool newPickupableState)
+		{
+			_isPickupable = newPickupableState;
+			if (_pickupModule != null)
+			{
+				if (newPickupableState)
+				{
+					_pickupModule.EnablePickup();
+				}
+				else
+				{
+					_pickupModule.DisablePickup();
+				}
+			}
+		}
 
 		public bool IsPanelOpen()
 		{
@@ -161,13 +190,13 @@ namespace myro
 			}
 		}
 
-		public void ForceOpenPanel()
+		public void ForceOpenPanel(float unscaledDistance = PLACEMENT_DISTANCE)
 		{
 			if (!IsPanelOpen())
 			{
 				OpenPanel();
 				
-				PlacePanelInFrontOfPlayer();
+				PlacePanelInFrontOfPlayer(unscaledDistance);
 
 				if (!_localPlayer.IsUserInVR())
 				{ 
@@ -357,9 +386,6 @@ namespace myro
 			}
 			else if (!IsRightHandTriggered() && !IsLeftHandTriggered())
 			{
-				//If the panel is not grabbed anymore, we close the panel under two conditions:
-				//- If the panel became twice as small
-				//- If the panel is smaller than "MinScale"
 				_forceStateOfPanel = EForceState.NONE;
 
 				OnPanelDrop();
@@ -384,17 +410,15 @@ namespace myro
 					SendCustomEventDelayedSeconds(nameof(EventEnableOneHandMovement), 0.1f);
 					return;
 				}
-				else if (GrabbablePanel && IsPanelOpen())
+				else if (_pickupModule == null && IsPanelOpen())
 				{
 					AttachToHand();
 				}
 			}
 		}
 
-		public override void InputGrab(bool value, UdonInputEventArgs args)
+		private void HandleInputGrab(bool value, UdonInputEventArgs args)
 		{
-			if (!_init) return;
-
 			if (!_localPlayer.IsUserInVR() || GestureMode == EGestureMode.Trigger)
 			{
 				return;
@@ -412,6 +436,31 @@ namespace myro
 			}
 
 			HandleInput(value, args);
+		}
+
+		private bool IsViveController()
+		{
+			string[] joystickNames = Input.GetJoystickNames();
+			foreach(var joystickName in joystickNames)
+			{
+				if (joystickName.ToLower().Contains("vive"))
+					return true;
+			}
+			return false;
+		}
+
+		public override void InputDrop(bool value, UdonInputEventArgs args)
+		{
+			if (!_init || !_isUsingViveControllers) return;
+
+			HandleInputGrab(value, args);
+		}
+
+		public override void InputGrab(bool value, UdonInputEventArgs args)
+		{
+			if (!_init || _isUsingViveControllers) return;
+
+			HandleInputGrab(value, args);
 		}
 
 		public override void InputUse(bool value, UdonInputEventArgs args)
@@ -454,13 +503,13 @@ namespace myro
 
 		private void AttachToHand()
 		{
-			if (!GrabbablePanel)
+			if (_pickupModule != null)
 			{
-				_grabbed = EGrabbed.NONE;
 				return;
 			}
 			else
 			{
+				_isPanelOpen = true;
 				_grabbed = EGrabbed.ONE_HANDED;
 
 				if (_isLeftHandTriggeredGrab)
@@ -476,49 +525,25 @@ namespace myro
 			}
 		}
 
-		public void Update()
+		public void PanelPickedUp()
 		{
-			if (!_init) return;
+			_isPanelOpen = true;
+			_grabbed = EGrabbed.ONE_HANDED;
+			_startScale = _panelTransf.localScale.x;
+			_currentScale = _startScale;
+			OnPanelGrab();
+		}
 
-			//In VR, it is more interesting to use Update, so it is still possible to interact with it while holding the panel and moving around with it.
-			if (_localPlayer.IsUserInVR())
-			{
-				if (_grabbed == EGrabbed.NONE)
-				{
-					if (IsPanelOpen() && PanelTooFarAway())
-					{
-						CloseOrRespawnPanel();
-					}
-					return;
-				}
-				else if (_grabbed == EGrabbed.ONE_HANDED)
-				{
-					VRCPlayerApi.TrackingData hand = _localPlayer.GetTrackingData(_panelAttachedToHand);
-
-					_panelTransf.position = (hand.position + (hand.rotation * _offsetPosition));
-					_panelTransf.rotation = (hand.rotation * _offsetRotation);
-				}
-				else
-				{
-					Vector3 left = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).position;
-					Vector3 right = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).position;
-					Vector3 headPos = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
-
-					_currentScale = Mathf.Clamp(_startScale * Vector3.Distance(left, right) / _startDistanceBetweenTwoHands, ScaleValueToAvatar(MinScale), ScaleValueToAvatar(MaxScale));
-
-					_panelTransf.position = ((left + right) / 2.0f);
-					SetPanelScale(_currentScale);
-					_panelTransf.LookAt(headPos);
-					_panelTransf.forward = -_panelTransf.forward;
-				}
-			}
+		public void PanelDropped()
+		{
+			_grabbed = EGrabbed.NONE;
+			OnPanelDrop();
 		}
 
 		public override void PostLateUpdate()
 		{
 			if (!_init) return;
 
-			//On Desktop, it is more interesting to use PostLateUpdate, so the panel doesn't lag behind.
 			if (!_localPlayer.IsUserInVR())
 			{
 				if (TabOnHold)
@@ -569,15 +594,49 @@ namespace myro
 					}
 				}
 			}
+			else
+			{
+				if (_grabbed == EGrabbed.NONE)
+				{
+					if (IsPanelOpen() && PanelTooFarAway())
+					{
+						CloseOrRespawnPanel();
+					}
+					return;
+				}
+				else if (_grabbed == EGrabbed.ONE_HANDED)
+				{
+					if (_isPickupable && !_pickupModule)
+					{
+						VRCPlayerApi.TrackingData hand = _localPlayer.GetTrackingData(_panelAttachedToHand);
+
+						_panelTransf.position = (hand.position + (hand.rotation * _offsetPosition));
+						_panelTransf.rotation = (hand.rotation * _offsetRotation);
+					}
+				}
+				else
+				{
+					Vector3 left = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).position;
+					Vector3 right = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).position;
+					Vector3 headPos = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
+
+					_currentScale = Mathf.Clamp(_startScale * Vector3.Distance(left, right) / _startDistanceBetweenTwoHands, ScaleValueToAvatar(MinScale), ScaleValueToAvatar(MaxScale));
+
+					_panelTransf.position = ((left + right) / 2.0f);
+					SetPanelScale(_currentScale);
+					_panelTransf.LookAt(headPos);
+					_panelTransf.forward = -_panelTransf.forward;
+				}
+			}
 		}
 
-		private void PlacePanelInFrontOfPlayer()
+		private void PlacePanelInFrontOfPlayer(float unscaledDistance = PLACEMENT_DISTANCE)
 		{
 			Quaternion headRot = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).rotation;
 			Vector3 headPos = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
 
-			float distance = ScaleValueToAvatar(0.3f);
-			float scale = ScaleValueToAvatar(PanelScaleOnDesktop);
+			float distance = ScaleValueToAvatar(unscaledDistance);
+			float scale = ScaleValueToAvatar(PanelScaleOnDesktop) * unscaledDistance / PLACEMENT_DISTANCE;
 			if (distance < 0.08f)
 			{
 				//If the avatar is really small, we need to place the menu a bit further away so it doesn't get clipped by the camera

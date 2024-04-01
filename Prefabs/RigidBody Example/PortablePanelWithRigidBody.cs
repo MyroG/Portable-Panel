@@ -5,63 +5,66 @@ using UnityEngine;
 using VRC.SDKBase;
 using VRC.Udon;
 
-/// <summary>
-/// Here's a script example of a panel connected to a rigid body
-/// The idea is to be able to throw the panel away, and once it's further away from the player, it will disintegrate
-/// </summary>
-public class PortablePanelWithRigidBody : myro.PortablePanel
+namespace myro
 {
-	public Rigidbody PanelRigidBody;
-    public ParticleSystem ClosingParticleAnimation;
-	public BoxCollider PickupCollider;
-
-	private Rigidbody _particleSystemRB;
-
-	private void StopPanel()
+	/// <summary>
+	/// Here's a script example of a panel connected to a rigid body
+	/// The idea is to be able to throw the panel away, and once it's further away from the player, it will disintegrate
+	/// </summary>
+	public class PortablePanelWithRigidBody : PortablePanel
 	{
-		PanelRigidBody.velocity = Vector3.zero;
-		PanelRigidBody.angularVelocity = Vector3.zero;
-	}
+		public Rigidbody PanelRigidBody;
+		public ParticleSystem ClosingParticleAnimation;
+		public BoxCollider PickupCollider;
 
-	public override void OnStart()
-    {
-		_particleSystemRB = ClosingParticleAnimation.GetComponent<Rigidbody>();
+		private Rigidbody _particleSystemRB;
 
-		if (!Networking.LocalPlayer.IsUserInVR())
+		private void StopPanel()
 		{
-			ClosingParticleAnimation.gameObject.SetActive(false);
-			PickupCollider.enabled = false;
-			_particleSystemRB.isKinematic = true;
-		}
-	}
-
-	public override void OnPanelGrab()
-	{
-		//to make sure the panel doesn't uncontrolably fly away when the panel gets dropped, we will set the velocity to 0 once the panel is grabbed
-		StopPanel();
-	}
-
-	public override bool OnPanelClosing()
-	{
-		//once the panel closes, let's just play a basic disintegration animation
-		//we first place the particle emitter at the exact location the panel was
-		ClosingParticleAnimation.transform.position = Panel.transform.position;
-		ClosingParticleAnimation.transform.rotation = Panel.transform.rotation;
-		ClosingParticleAnimation.transform.localScale = Panel.transform.localScale;
-
-		//momentum transfer
-		if (_particleSystemRB != null)
-		{
-			_particleSystemRB.velocity = PanelRigidBody.velocity;
-			_particleSystemRB.angularVelocity = PanelRigidBody.angularVelocity;
+			PanelRigidBody.velocity = Vector3.zero;
+			PanelRigidBody.angularVelocity = Vector3.zero;
 		}
 
-		StopPanel();
+		public override void OnStart()
+		{
+			_particleSystemRB = ClosingParticleAnimation.GetComponent<Rigidbody>();
 
-		//playing the animation
-		ClosingParticleAnimation.Stop();
-		ClosingParticleAnimation.Play();
+			if (!Networking.LocalPlayer.IsUserInVR())
+			{
+				ClosingParticleAnimation.gameObject.SetActive(false);
+				PickupCollider.enabled = false;
+				_particleSystemRB.isKinematic = true;
+			}
+		}
 
-		return true; //We want to close the panel
+		public override void OnPanelGrab()
+		{
+			//to make sure the panel doesn't uncontrolably fly away when the panel gets dropped, we will set the velocity to 0 once the panel is grabbed
+			StopPanel();
+		}
+
+		public override bool OnPanelClosing()
+		{
+			//once the panel closes, let's just play a basic disintegration animation
+			//we first place the particle emitter at the exact location the panel was
+			ClosingParticleAnimation.transform.position = Panel.transform.position;
+			ClosingParticleAnimation.transform.rotation = Panel.transform.rotation;
+			ClosingParticleAnimation.transform.localScale = Panel.transform.localScale;
+
+			//momentum transfer
+			if (_particleSystemRB != null)
+			{
+				_particleSystemRB.velocity = PanelRigidBody.velocity;
+				_particleSystemRB.angularVelocity = PanelRigidBody.angularVelocity;
+			}
+
+			StopPanel();
+
+			//playing the animation
+			ClosingParticleAnimation.Stop();
+			ClosingParticleAnimation.Play();
+
+			return true; //We want to close the panel
+		}
 	}
 }
