@@ -191,7 +191,7 @@ namespace myro
 			}
 		}
 
-		public void ForceOpenPanel(float unscaledDistance = PLACEMENT_DISTANCE_FROM_HEAD)
+		public void ForceOpenPanel(float unscaledDistance)
 		{
 			if (!IsPanelOpen())
 			{
@@ -201,10 +201,14 @@ namespace myro
 
 				if (!_localPlayer.IsUserInVR())
 				{ 
-					//doesn't make much sense to set those values for VR players?
 					_forceStateOfPanel = EForceState.FORCE_OPEN;
 				}
 			}
+		}
+
+		public void ForceOpenPanel()
+		{
+			ForceOpenPanel(PLACEMENT_DISTANCE_FROM_HEAD);
 		}
 
 		public bool IsPanelHoldByOneHand()

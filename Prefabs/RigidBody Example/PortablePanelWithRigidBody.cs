@@ -34,6 +34,7 @@ namespace myro
 				ClosingParticleAnimation.gameObject.SetActive(false);
 				PickupCollider.enabled = false;
 				_particleSystemRB.isKinematic = true;
+				PanelRigidBody.isKinematic = true;
 			}
 		}
 
