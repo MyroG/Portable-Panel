@@ -40,6 +40,11 @@ In the folder `Assets/Myorp/PortablePanel`, you'll find two prefabs :
 4) You can now delete the `[DELETE THIS]` GameObject (You can also just hide the GameObject if you do not want to delete it).
 5) If you're using the ThrowablePanel prefab, and your panel already has a VRCPickup component, remove that component, the `[ADD YOUR PANEL AS A CHILD OF THIS GAMEOBJECT]` GameObject already has the VRCPickup component.
 
+A few additional steps :
+6) If you do not want to include the tutorial for players, you can delete the `TutorialForUser` GameObject
+7) If you do not care about mobile devices, you can delete the `AndroidPanelModule` GameObject
+8) If you want the position of your panel to be synced, check the `SetOwnerOnPickup` checkbox at the root of the prefab, then add the `VRCObjectSync` component on the `[ADD YOUR PANEL AS A CHILD OF THIS GAMEOBJECT]` GameObject
+
 ### More difficult/Manual installation
 
 The panel doesn't need to have a VRCPickup component, it can be grabbed even without that component, but if you prefer using a VRCPickup, the installation steps are a bit different :
@@ -62,6 +67,16 @@ I would recommend to add it into your scene so Android users can open the panel 
 
 You'll notice that the "Canvas" GameObject attached as a child is turned off by default, it should be off by default, this is to ensure that the canvas doesn't get shown on the VRChat loading screen.
 
+### Tutorial for players in your world
+
+![Parameters](https://github.com/MyroG/Portable-Panel/blob/main/Res/Tutorial.PNG)
+
+The prefab `TutorialForUser` contains a tutorial that shows how to use the menu system. It does not show up on Android mobile devices.
+**Portable Panel** : Needs to reference your portable panel
+**Place in front of player for X seconds** : How long you want to show the tutorial in front of the player. If you set that value to 0, then the tutorial will only show up at the location it got placed, and it won't follow the player's head
+**Text VR** : The text you want to show in VR, `{0}` is a placeholder that gets replaced by the currently selected control
+**Text Desktop** : The text you want to show On Desktop
+
 ## Settings
 
 The `PortablePanel` component has a few settings, I'll explain them bellow:
@@ -82,6 +97,8 @@ Certain settings like `Max Scale`, `Min Scale`, `Max Distance Before Closing The
 | Max Distance Before Closing The Panel | The panel will automatically close if the player walks away from it. The distance can be configured here.     |
 | Panel Scale On Desktop               | Desktop-only setting: Scale of the panel for Desktop users.                                                            |
 | Delay Initialisation                 | This is an ugly hack to prevent certain prefabs to break.<br />When you launch the instance, the panel gets automatically hidden from the player, and that during the loading screen. In most cases, that shouldn't cause any issues, but hiding the panel disables any script that is attached to that panel, which can break certain scripts that really need to get initialised during the loading screen.<br />For instance, certain video player controls attached to the panel could break because of that. If that happens, you can check that checkbox, this will initialise the panel shortly before the loading screen ends, and ensure that most prefabs attached to that panel will initialise properly, the drawback is that you cannot disable the `PortablePanel` script at the start of the world, as it will break the script...|
+| Set Owner On Pickup                  | If you want to sync the position of the panel using an VRCObjectSync component, you should turn that checkbox on |
+
  
 ## Events 
 If you want to implement custom behaviors to the panel, for instance when the panel closes, or when it gets dropped, you can create a class that inherits from `PortablePanel` ann override the events you need to override.
@@ -108,6 +125,8 @@ A few public methods can be called from an external script :
 | `SetRespawnPoint(Vector3 position, Quaternion rotation, Vector3 scale)`     |        | Sets the respawn point of the panel, which can be useful if you want to move the panel to a different place. |                                                   |
 | `RespawnPanel`         |        | Respawns the panel, only works  when `Closing Behaviour` is set to `Respawning`, it has a similar behaviour as `ForceClosePanel`, except that `ForceClosePanel` checks if the panel already got closed. |       
 | `SetPickupable(bool newPickupableState)`     |        | Sets the "pickupable" state of your panel. This will also work for VRCPickups | The new pickupable state |
+| `TogglePickupable()`     |        | Toggles the "pickupable" state of your panel. This will also work for VRCPickups |  |
+| `IsPickupable()`     |  bool      | Returns true if the panel is pickupable |  |
 
 ## Constants
 I use three contants I didn't exposed in the inspector, because I didn't wanted to fill up the inspector with parameters no one will change, but if needed you can change them directly in the code.
