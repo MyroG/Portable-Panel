@@ -13,11 +13,11 @@ This package includes two examples :
 
 A basic panel 
 
-![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Res/Presentation1.gif)
+![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/_Doc/Presentation1.gif)
 
 A more complex example where the panel can be thrown away. Once the player is too far away from the panel, it dissintegrates, which is done with a basic particle animation.
 
-![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Res/Presentation2.gif)
+![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/_Doc/Presentation2.gif)
 
 
  
@@ -35,7 +35,7 @@ In the folder `Assets/Myorp/PortablePanel`, you'll find two prefabs :
 
 1) Open the prefab of your choice, you can also duplicate the prefab if you do not want to override the one present in the folder
 2) The hierarchie looks like this : <br>
-![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/Res/PanelHierarchy.PNG)
+![Showcase](https://github.com/MyroG/Portable-Panel/blob/main/_Doc/PanelHierarchy.PNG)
 3) Add your panel as a child of the GameObject `[ADD YOUR PANEL AS A CHILD OF THIS GAMEOBJECT]`, place it in a way so it matches the placeholder panel (which is named `[DELETE THIS]`)
 4) You can now delete the `[DELETE THIS]` GameObject (You can also just hide the GameObject if you do not want to delete it).
 5) If you're using the ThrowablePanel prefab, and your panel already has a VRCPickup component, remove that component, the `[ADD YOUR PANEL AS A CHILD OF THIS GAMEOBJECT]` GameObject already has the VRCPickup component.
@@ -60,7 +60,7 @@ If your panel is a VRCPickup :
 
 ### Android Smartphone
 
-![Parameters](https://github.com/MyroG/Portable-Panel/blob/main/Res/Android.PNG)
+![Parameters](https://github.com/MyroG/Portable-Panel/blob/main/_Doc/Android.PNG)
 
 The prefab `AndroidPanelModule` adds an overlay so the Panel can easily be opened and closed on Android devices, it adds a screen space canvas with a button, the android panel can be customized if needed.
 I would recommend to add it into your scene so Android users can open the panel on their device, the field `Portable Panel Instance` needs to reference your panel.
@@ -69,7 +69,7 @@ You'll notice that the "Canvas" GameObject attached as a child is turned off by 
 
 ### Tutorial for players in your world
 
-![Parameters](https://github.com/MyroG/Portable-Panel/blob/main/Res/Tutorial.PNG)
+![Parameters](https://github.com/MyroG/Portable-Panel/blob/main/_Doc/Tutorial.PNG)
 
 The prefab `TutorialForUser` contains a tutorial that shows how to use the menu system. It does not show up on Android mobile devices.
 **Portable Panel** : Needs to reference your portable panel
@@ -81,7 +81,7 @@ The prefab `TutorialForUser` contains a tutorial that shows how to use the menu 
 
 The `PortablePanel` component has a few settings, I'll explain them bellow:
 
-![Parameters](https://github.com/MyroG/Portable-Panel/blob/main/Res/Parameters.png)
+![Parameters](https://github.com/MyroG/Portable-Panel/blob/main/_Doc/Parameters.png)
 
 Certain settings like `Max Scale`, `Min Scale`, `Max Distance Before Closing The Panel`, and `Panel Scale On Desktop` are all based on real-world measurements, like meters you'd use in your room, rather than Unity's internal units. These values automatically adjust based on the size of your avatar. So, for example, if you set `Max Distance Before Closing The Panel` to 5 meters, and your avatar is 1m80 tall, the panel will close when it's 5 meters away from your avatar. But if your avatar is smaller, say 90cm, the panel will close at 2m50, which is half the distance. From your point of view as a player, it will still feel like the panel is closing at 5 meters, even though it adapts to your avatar's size
 
