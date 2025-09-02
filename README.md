@@ -41,6 +41,7 @@ In the folder `Assets/Myorp/PortablePanel`, you'll find two prefabs :
 5) If you're using the ThrowablePanel prefab, and your panel already has a VRCPickup component, remove that component, the `[ADD YOUR PANEL AS A CHILD OF THIS GAMEOBJECT]` GameObject already has the VRCPickup component.
 
 A few additional steps :
+
 6) If you do not want to include the tutorial for players, you can delete the `TutorialForUser` GameObject
 7) If you do not care about mobile devices, you can delete the `AndroidPanelModule` GameObject
 8) If you want the position of your panel to be synced, check the `SetOwnerOnPickup` checkbox at the root of the prefab, then add the `VRCObjectSync` component on the `[ADD YOUR PANEL AS A CHILD OF THIS GAMEOBJECT]` GameObject
@@ -69,7 +70,7 @@ You'll notice that the "Canvas" GameObject attached as a child is turned off by 
 
 ### Tutorial for players in your world
 
-![Parameters](https://github.com/MyroG/Portable-Panel/blob/main/_Doc/Tutorial.PNG)
+![Parameters](https://github.com/MyroG/Portable-Panel/blob/main/_Doc/TutorialPlayer.PNG)
 
 The prefab `TutorialForUser` contains a tutorial that shows how to use the menu system. It does not show up on Android mobile devices.
 **Portable Panel** : Needs to reference your portable panel
