@@ -73,10 +73,11 @@ You'll notice that the "Canvas" GameObject attached as a child is turned off by 
 ![Parameters](https://github.com/MyroG/Portable-Panel/blob/main/_Doc/TutorialPlayer.PNG)
 
 The prefab `TutorialForUser` contains a tutorial that shows how to use the menu system. It does not show up on Android mobile devices.
-**Portable Panel** : Needs to reference your portable panel
-**Place in front of player for X seconds** : How long you want to show the tutorial in front of the player. If you set that value to 0, then the tutorial will only show up at the location it got placed, and it won't follow the player's head
-**Text VR** : The text you want to show in VR, `{0}` is a placeholder that gets replaced by the currently selected control
-**Text Desktop** : The text you want to show On Desktop
+
+- **Portable Panel** : Needs to reference your portable panel.
+- **Place in front of player for X seconds** : How long you want to show the tutorial in front of the player. If you set that value to 0, then the tutorial will only show up at the location it got placed, and it won't follow the player's head
+- **Text VR** : The text you want to show in VR, `{0}` is a placeholder that gets replaced by the currently selected control
+- **Text Desktop** : The text you want to show On Desktop
 
 ## Settings
 
