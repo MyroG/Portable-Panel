@@ -26,13 +26,13 @@ namespace myro
 		public override void OnPickup()
 		{
 			if (PortablePanelReference)
-				PortablePanelReference.PanelPickedUp();
+				PortablePanelReference._PanelPickedUp();
 		}
 
 		public override void OnDrop()
 		{
 			if (PortablePanelReference)
-				PortablePanelReference.PanelDropped();
+				PortablePanelReference._PanelDropped();
 		}
 
 		public void DisablePickup()

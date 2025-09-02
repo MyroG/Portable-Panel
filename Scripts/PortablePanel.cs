@@ -1,8 +1,15 @@
+using PortMidi;
+using System;
+using System.Linq;
 using UdonSharp;
+using Unity.Burst.Intrinsics;
 using UnityEngine;
+using UnityEngine.Windows;
+using VRC.SDK3.Data;
 using VRC.SDKBase;
 using VRC.Udon;
 using VRC.Udon.Common;
+using static VRC.Dynamics.CollisionShapes;
 
 namespace myro
 {
@@ -33,7 +40,13 @@ namespace myro
 		FORCE_OPEN
 	}
 
-	
+	public enum EAllowedInputs
+	{
+		GRAB_LEFT,
+		GRAB_RIGHT,
+		TRIGGER_LEFT,
+		TRIGGER_RIGHT
+	}
 
 	[UdonBehaviourSyncMode(BehaviourSyncMode.None)]
 	[DefaultExecutionOrder(500)]
@@ -62,13 +75,12 @@ namespace myro
 
 		private VRCPlayerApi _localPlayer;
 		private EGrabbed _grabbed;
-		private bool _isRightHandTriggeredGrab , _isLeftHandTriggeredGrab;
-		private bool _isRightHandTriggeredTrigger , _isLeftHandTriggeredTrigger;
-		private float _timeRightHandGesture , _timeLeftHandGesture;
-
+		private DataList _triggeredInputList;
+		private float _timeStartTrigger, _timeEndTrigger;
 
 		//The variables bellow are used to calculate the position and the scale of the panel once it's hold with both hand
 		private float _startDistanceBetweenTwoHands;
+		private Vector3 _oneHandedOrigin;
 		private float _startScale;
 		private float _currentScale;
 
@@ -92,18 +104,15 @@ namespace myro
 		private bool _init;
 		private bool _isUsingViveControllers;
 
-		private const float TIME_INTERVAL_HAND_GESTURE = 0.15f;
-		private const float MAX_DISTANCE_HAND_GESTURE = 0.3f;
+		private const float TIME_INTERVAL_HAND_GESTURE = 0.25f;
+		private const float MAX_DISTANCE_HAND_GESTURE = 0.25f;
 		private const float PLACEMENT_DISTANCE_FROM_HEAD = 0.3f;
 		private const float CLOSING_HAND_DISTANCE = 0.15f;
 
 		void OnEnable()
 		{
 			_localPlayer = Networking.LocalPlayer;
-			_isRightHandTriggeredGrab = false;
-			_isLeftHandTriggeredGrab = false;
-			_isRightHandTriggeredTrigger = false;
-			_isLeftHandTriggeredTrigger = false;
+			_triggeredInputList = new DataList();
 			_panelTransf = Panel.transform;	
 		}
 
@@ -168,6 +177,24 @@ namespace myro
 				}
 			}
 		}
+
+		/// <summary>
+		/// Toggles the "pickupable" state of your panel. This will also work for VRCPickups
+		/// </summary>
+		public void _TogglePickupable()
+		{
+			SetPickupable(!_isPickupable);
+		}
+
+		/// <summary>
+		/// Return true if the panel is pickupable
+		/// </summary>
+		/// <returns></returns>
+		public bool IsPickupable()
+		{
+			return _isPickupable;
+		}
+
 
 		public bool IsPanelOpen()
 		{
@@ -296,10 +323,7 @@ namespace myro
 		private void CloseOrRespawnPanel()
 		{
 			_grabbed = EGrabbed.NONE;
-			_isRightHandTriggeredGrab = false;
-			_isLeftHandTriggeredGrab = false;
-			_isRightHandTriggeredTrigger = false;
-			_isLeftHandTriggeredTrigger = false;
+			_triggeredInputList = new DataList();
 
 			if (OnPanelClosing())
 			{
@@ -341,67 +365,190 @@ namespace myro
 		protected float ScaleValueToAvatar(float value)
 		{
 #if UNITY_EDITOR
-			return value; // A Client Sim bug makes the script crash if "GetAvatarEyeHeightAsMeters" gets called, temporary fix until GetAvatarEyeHeightAsMeters is fully exposed in ClientSim...
+			return value; // An older Client Sim bug makes the script crash if "GetAvatarEyeHeightAsMeters" gets called.
+			// It should be fixed on newer version of ClientSim, but I'll keep it to ensure it still works on older SDKs
 #else
 			return _localPlayer.GetAvatarEyeHeightAsMeters() * value / 1.80f;
 #endif
 		}
 
-		private bool IsRightHandTriggered()
+		private void UpdateTriggeredInputList(EAllowedInputs input, bool isTriggered)
 		{
-			if (GestureMode != EGestureMode.Both)
-				return _isRightHandTriggeredGrab || _isRightHandTriggeredTrigger;
-			return _isRightHandTriggeredGrab && _isRightHandTriggeredTrigger;
+			if (!isTriggered)
+			{
+				_triggeredInputList.Remove(System.Convert.ToInt32(input));
+			}
+            else if (IsValidInputToOpenPanel(input))
+            {
+				_triggeredInputList.Add(System.Convert.ToInt32(input));
+				if (_triggeredInputList.Count == 1)
+				{
+					_timeStartTrigger = Time.time;
+				}
+				_timeEndTrigger = Time.time;
+			}
 		}
 
-		private bool IsLeftHandTriggered()
+		private bool IsLeftControllerOn()
 		{
-			if (GestureMode != EGestureMode.Both)
-				return _isLeftHandTriggeredGrab || _isLeftHandTriggeredTrigger;
-			return _isLeftHandTriggeredGrab && _isLeftHandTriggeredTrigger;
+			string[] inputs = UnityEngine.Input.GetJoystickNames();
+			foreach (string input in inputs)
+			{
+				if (input.ToLower().Contains("left"))
+					return true;
+			}
+			return false;
+		}
+
+		private bool IsRightControllerOn()
+		{
+			string[] inputs = UnityEngine.Input.GetJoystickNames();
+			foreach (string input in inputs)
+			{
+				if (input.ToLower().Contains("right"))
+					return true;
+			}
+			return false;
+		}
+
+		private bool IsOneHanded()
+		{
+			return !IsRightControllerOn() || !IsLeftControllerOn();
+		}
+
+		private DataList GetValidInputs()
+		{
+			DataList ret = new DataList();
+
+			if (IsLeftControllerOn())
+			{
+				if (GestureMode == EGestureMode.Both || GestureMode == EGestureMode.Grab)
+					ret.Add(Convert.ToInt32(EAllowedInputs.GRAB_LEFT));
+
+				if (GestureMode == EGestureMode.Both || GestureMode == EGestureMode.Trigger)
+					ret.Add(Convert.ToInt32(EAllowedInputs.TRIGGER_LEFT));
+			}
+
+			if (IsRightControllerOn())
+			{
+				if (GestureMode == EGestureMode.Both || GestureMode == EGestureMode.Grab)
+					ret.Add(Convert.ToInt32(EAllowedInputs.GRAB_RIGHT));
+
+				if (GestureMode == EGestureMode.Both || GestureMode == EGestureMode.Trigger)
+					ret.Add(Convert.ToInt32(EAllowedInputs.TRIGGER_RIGHT));
+			}
+
+			return ret;
+		}
+		private bool IsValidInputToOpenPanel(EAllowedInputs inputToCheck)
+		{
+			DataList validInputs = GetValidInputs();
+			return validInputs.Contains(Convert.ToInt32(inputToCheck));
+		}
+
+		private bool IsDoingOpeningPanelGesture()
+		{
+			DataList validInputs = GetValidInputs();
+
+			for (int i = 0; i < validInputs.Count; i++)
+			{
+				if (!_triggeredInputList.Contains(validInputs[i]))
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+
+		private bool IsDoingGrabbingPanelGesture()
+		{
+			return _triggeredInputList.Contains(Convert.ToInt32(EAllowedInputs.GRAB_RIGHT)) || _triggeredInputList.Contains(Convert.ToInt32(EAllowedInputs.GRAB_LEFT));
+		}
+
+		private bool IsDoingGrabbingPanelGestureLeft()
+		{
+			return _triggeredInputList.Contains(Convert.ToInt32(EAllowedInputs.GRAB_LEFT));
+		}
+
+		private bool IsDoingGrabbingPanelGestureRight()
+		{
+			return _triggeredInputList.Contains(Convert.ToInt32(EAllowedInputs.GRAB_RIGHT));
+		}
+
+		private bool IsDoingGesture()
+		{
+			return _triggeredInputList.Count > 0;
+		}
+
+		private Vector3 GetOneHandedControllerPosition()
+		{
+			if (IsLeftControllerOn())
+			{
+				return _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).position;
+			}
+			return _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).position;
+		}
+
+		private float CurrentHandsDistance(bool openingPhase)
+		{
+			if (IsOneHanded())
+				return openingPhase
+					? 0.001f //at this stage, _oneHandedOrigin isn't set yet, so we basically just assume that left and right hands are together
+					: Vector3.Distance(_oneHandedOrigin, GetOneHandedControllerPosition());
+
+			var l = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).position;
+			var r = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).position;
+			return Vector3.Distance(l, r);
 		}
 
 		private void HandleInput(bool value, UdonInputEventArgs args)
 		{
-			float distanceBetweenBothHands = Vector3.Distance(
-						_localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).position,
-						_localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).position
-					);
-
-			if (IsRightHandTriggered() && IsLeftHandTriggered()
-				&& Mathf.Abs(_timeRightHandGesture - _timeLeftHandGesture) < TIME_INTERVAL_HAND_GESTURE
-				&& (distanceBetweenBothHands < ScaleValueToAvatar(MAX_DISTANCE_HAND_GESTURE)  || IsPanelOpen()))
+			if (IsDoingOpeningPanelGesture() && Mathf.Abs(_timeStartTrigger - _timeEndTrigger) < TIME_INTERVAL_HAND_GESTURE)
 			{
-				//If the grab gesture is used on both hands, we open the panel
-				_startDistanceBetweenTwoHands = distanceBetweenBothHands; 
+				var dist = CurrentHandsDistance(true);
 
+				if (dist >= ScaleValueToAvatar(MAX_DISTANCE_HAND_GESTURE) && !IsPanelOpen()) return;
+
+				//If the grab gesture is used on both hands, we open the panel
+				//but if the panel was already open, we rescale the panel
 				OnPanelGrab();
 
 				if (!IsPanelOpen() && _forceStateOfPanel != EForceState.FORCE_CLOSE)
 				{
+					_startDistanceBetweenTwoHands = dist;
+					_oneHandedOrigin = GetOneHandedControllerPosition();
+					_startScale = dist;
 					OpenPanel();
-					
-					_startScale = _startDistanceBetweenTwoHands;
 				}
 				else
 				{
+					_oneHandedOrigin = _panelTransf.transform.position;
 					_startScale = _panelTransf.localScale.x;
+					_startDistanceBetweenTwoHands = Vector3.Distance(_oneHandedOrigin, GetOneHandedControllerPosition());
 				}
+
 				_grabbed = EGrabbed.BOTH_HANDS;
+				return;
 			}
-			else if (!IsRightHandTriggered() && !IsLeftHandTriggered())
+
+			if (!IsDoingGesture())
 			{
+				//No more gestures => Dropping the panel
+				var dist = CurrentHandsDistance(false);
 				_forceStateOfPanel = EForceState.NONE;
 
 				OnPanelDrop();
 
-				if (IsPanelOpen() && distanceBetweenBothHands < ScaleValueToAvatar(CLOSING_HAND_DISTANCE))
+				if (IsPanelOpen() && dist < ScaleValueToAvatar(CLOSING_HAND_DISTANCE))
 				{
 					CloseOrRespawnPanel();
 				}
+
 				_grabbed = EGrabbed.NONE;
+				return;
 			}
-			else if (IsRightHandTriggered() || IsLeftHandTriggered())
+
+			if (IsDoingGrabbingPanelGesture())
 			{
 				//Grab gesture with one hand :
 				//- If the player previously grabbed the panel with both hands, we can add a little delay before "ungrabbing" the panel to avoid accidental 
@@ -413,7 +560,8 @@ namespace myro
 					SendCustomEventDelayedSeconds(nameof(EventEnableOneHandMovement), 0.1f);
 					return;
 				}
-				else if (_pickupModule == null && IsPanelOpen())
+
+				if (_pickupModule == null && IsPanelOpen())
 				{
 					AttachToHand();
 				}
@@ -422,28 +570,22 @@ namespace myro
 
 		private void HandleInputGrab(bool value, UdonInputEventArgs args)
 		{
-			if (!_localPlayer.IsUserInVR() || GestureMode == EGestureMode.Trigger)
+			if (!_localPlayer.IsUserInVR())
 			{
 				return;
 			}
 
-			if (args.handType == HandType.RIGHT)
-			{
-				_isRightHandTriggeredGrab = value;
-				_timeRightHandGesture = Time.time;
-			}
-			else if (args.handType == HandType.LEFT)
-			{
-				_isLeftHandTriggeredGrab = value;
-				_timeLeftHandGesture = Time.time;
-			}
+			UpdateTriggeredInputList(
+				args.handType == HandType.LEFT ? EAllowedInputs.GRAB_LEFT : EAllowedInputs.GRAB_RIGHT,
+				value
+			);
 
 			HandleInput(value, args);
 		}
 
 		private bool IsViveController()
 		{
-			string[] joystickNames = Input.GetJoystickNames();
+			string[] joystickNames = UnityEngine.Input.GetJoystickNames();
 			foreach(var joystickName in joystickNames)
 			{
 				if (joystickName.ToLower().Contains("vive"))
@@ -470,26 +612,20 @@ namespace myro
 		{
 			if (!_init) return;
 
-			if (!_localPlayer.IsUserInVR() || GestureMode == EGestureMode.Grab)
+			if (!_localPlayer.IsUserInVR())
 			{
 				return;
 			}
 
-			if (args.handType == HandType.RIGHT)
-			{
-				_isRightHandTriggeredTrigger = value;
-				_timeRightHandGesture = Time.time;
-			}
-			else if (args.handType == HandType.LEFT)
-			{
-				_isLeftHandTriggeredTrigger = value;
-				_timeLeftHandGesture = Time.time;
-			}
+			UpdateTriggeredInputList(
+				args.handType == HandType.LEFT ? EAllowedInputs.TRIGGER_LEFT : EAllowedInputs.TRIGGER_RIGHT,
+				value
+			);
 
 			HandleInput(value, args);
 		}
 
-		public void EventEnableOneHandMovement()
+		private void EventEnableOneHandMovement()
 		{
 			if (_grabbed == EGrabbed.BOTH_HANDS)
 			{
@@ -515,7 +651,7 @@ namespace myro
 				_isPanelOpen = true;
 				_grabbed = EGrabbed.ONE_HANDED;
 
-				if (_isLeftHandTriggeredGrab)
+				if (IsDoingGrabbingPanelGestureLeft())
 					_panelAttachedToHand = VRCPlayerApi.TrackingDataType.LeftHand;
 				else
 					_panelAttachedToHand = VRCPlayerApi.TrackingDataType.RightHand;
@@ -528,7 +664,7 @@ namespace myro
 			}
 		}
 
-		public void PanelPickedUp()
+		public void _PanelPickedUp()
 		{
 			_isPanelOpen = true;
 			_grabbed = EGrabbed.ONE_HANDED;
@@ -537,7 +673,7 @@ namespace myro
 			OnPanelGrab();
 		}
 
-		public void PanelDropped()
+		public void _PanelDropped()
 		{
 			_grabbed = EGrabbed.NONE;
 			OnPanelDrop();
@@ -551,7 +687,7 @@ namespace myro
 			{
 				if (TabOnHold)
 				{
-					bool tabPressed = Input.GetKey(KeyCode.Tab);
+					bool tabPressed = UnityEngine.Input.GetKey(KeyCode.Tab);
 
 					if ((tabPressed && _forceStateOfPanel != EForceState.FORCE_CLOSE)
 						|| _forceStateOfPanel == EForceState.FORCE_OPEN)
@@ -581,7 +717,7 @@ namespace myro
 				}
 				else
 				{
-					bool tabPressedDown = Input.GetKeyDown(KeyCode.Tab);
+					bool tabPressedDown = UnityEngine.Input.GetKeyDown(KeyCode.Tab);
 
 					if (!IsPanelOpen() && (tabPressedDown || _forceStateOfPanel == EForceState.FORCE_OPEN))
 					{
@@ -619,13 +755,24 @@ namespace myro
 				}
 				else
 				{
-					Vector3 left = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).position;
-					Vector3 right = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).position;
+					float distance = CurrentHandsDistance(false);
+					Vector3 origin;
+					if (IsOneHanded())
+					{
+						distance *= 2.0f; //distance between the two extremities of the panel = radius * 2
+						origin = _oneHandedOrigin;
+					}
+					else
+					{
+						Vector3 left = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).position;
+						Vector3 right = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).position;
+						origin = ((left + right) / 2.0f);
+					}
 					Vector3 headPos = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
 
-					_currentScale = Mathf.Clamp(_startScale * Vector3.Distance(left, right) / _startDistanceBetweenTwoHands, ScaleValueToAvatar(MinScale), ScaleValueToAvatar(MaxScale));
+					_currentScale = Mathf.Clamp(_startScale * distance / _startDistanceBetweenTwoHands, ScaleValueToAvatar(MinScale), ScaleValueToAvatar(MaxScale));
 
-					_panelTransf.position = ((left + right) / 2.0f);
+					_panelTransf.position = origin;
 					SetPanelScale(_currentScale);
 					_panelTransf.LookAt(headPos);
 					_panelTransf.forward = -_panelTransf.forward;
