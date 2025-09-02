@@ -95,7 +95,7 @@ public class PortablePanelTutorial : UdonSharpBehaviour
 
 	public override void OnPlayerJoined(VRCPlayerApi player)
 	{
-		if (!player.isLocal)
+		if (!player.isLocal || PlaceInFrontOfPlayerForXSeconds <= 0)
 		{
 			return;
 		}

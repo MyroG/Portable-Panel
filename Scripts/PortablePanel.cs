@@ -68,6 +68,7 @@ namespace myro
 		public float MaxDistanceBeforeClosingThePanel = 2f;
 		public float PanelScaleOnDesktop = 0.5f;
 
+		public bool SetOwnerOnPickup = false;
 
 		[Header("Advanced settings, change them only if you really need to")]
 		[SerializeField]
@@ -104,7 +105,7 @@ namespace myro
 		private bool _init;
 		private bool _isUsingViveControllers;
 
-		private const float TIME_INTERVAL_HAND_GESTURE = 0.25f;
+		private const float TIME_INTERVAL_HAND_GESTURE = 0.3f;
 		private const float MAX_DISTANCE_HAND_GESTURE = 0.25f;
 		private const float PLACEMENT_DISTANCE_FROM_HEAD = 0.3f;
 		private const float CLOSING_HAND_DISTANCE = 0.15f;
@@ -250,6 +251,14 @@ namespace myro
 			_scale = scale;
 		}
 
+		private void SetOwner()
+		{
+			if (!SetOwnerOnPickup) return;
+
+			if (!Networking.IsOwner(Panel))
+				Networking.SetOwner(_localPlayer, Panel);
+		}
+
 		public void RespawnPanel()
 		{
 			//we currently just need to close it
@@ -350,6 +359,7 @@ namespace myro
 
 		public void RespawnToOriginalLocation()
 		{
+			SetOwner();
 			_panelTransf.position = _position;
 			_panelTransf.rotation = _rotation;
 			_panelTransf.localScale = _scale;
@@ -503,7 +513,9 @@ namespace myro
 
 		private void HandleInput(bool value, UdonInputEventArgs args)
 		{
-			if (IsDoingOpeningPanelGesture() && Mathf.Abs(_timeStartTrigger - _timeEndTrigger) < TIME_INTERVAL_HAND_GESTURE)
+			if (IsDoingOpeningPanelGesture() 
+				&& (!IsPanelOpen() || !IsOneHanded()) //No scaling in one handed mode, because it prevents the panel from being grabbed
+				&& Mathf.Abs(_timeStartTrigger - _timeEndTrigger) < TIME_INTERVAL_HAND_GESTURE)
 			{
 				var dist = CurrentHandsDistance(true);
 
@@ -534,12 +546,11 @@ namespace myro
 			if (!IsDoingGesture())
 			{
 				//No more gestures => Dropping the panel
-				var dist = CurrentHandsDistance(false);
 				_forceStateOfPanel = EForceState.NONE;
 
 				OnPanelDrop();
 
-				if (IsPanelOpen() && dist < ScaleValueToAvatar(CLOSING_HAND_DISTANCE))
+				if (IsPanelOpen() && _panelTransf.localScale.x < ScaleValueToAvatar(CLOSING_HAND_DISTANCE))
 				{
 					CloseOrRespawnPanel();
 				}
@@ -748,7 +759,7 @@ namespace myro
 					if (_isPickupable && !_pickupModule)
 					{
 						VRCPlayerApi.TrackingData hand = _localPlayer.GetTrackingData(_panelAttachedToHand);
-
+						SetOwner();
 						_panelTransf.position = (hand.position + (hand.rotation * _offsetPosition));
 						_panelTransf.rotation = (hand.rotation * _offsetRotation);
 					}
@@ -771,7 +782,7 @@ namespace myro
 					Vector3 headPos = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
 
 					_currentScale = Mathf.Clamp(_startScale * distance / _startDistanceBetweenTwoHands, ScaleValueToAvatar(MinScale), ScaleValueToAvatar(MaxScale));
-
+					SetOwner();
 					_panelTransf.position = origin;
 					SetPanelScale(_currentScale);
 					_panelTransf.LookAt(headPos);
@@ -799,7 +810,7 @@ namespace myro
 				distance = MinScale * distance / scale;
 				scale = MinScale;
 			}
-
+			SetOwner();
 			_panelTransf.position = (headPos + headRot * Vector3.forward * distance);
 			SetPanelScale(scale);
 			_panelTransf.LookAt(headPos);
