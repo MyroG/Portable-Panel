@@ -137,6 +137,19 @@ I use three contants I didn't exposed in the inspector, because I didn't wanted 
 - PLACEMENT_DISTANCE_FROM_HEAD : The default distance the panel gets opened on Desktop, do not set it to 0.
 - CLOSING_HAND_DISTANCE : If the distance between both hands is smaller than the value of this const variable, then the panel will close. Note that this variable is scaled based on the size of the avatar.
 
+## More frequent issues
+
+### I am colliding with the panel
+
+1) If you're using the throwable panel prefab, make sure the Pickup component (the `[ADD YOUR PANEL AS A CHILD OF THIS GAMEOBJECT]` GameObject) is set to the "Pickup" layer
+
+That should be the default setting, the Pickup layer doesn't collide with the player.
+
+2) Make sure your interactable canvases have a trigger collider
+
+The VRChat VRCUiShape component automatically adds a collider to any canvas it is attached to. That collider does collide with players.
+To prevent this issue, add a BoxCollider to your canvas (basically, every canvas with a VRCUiShape component) and set it as a Trigger. This way, VRChat won't add another collider to the canvas.
+
 ## License
 MIT, see the include LICENSE file
 
