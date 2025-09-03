@@ -304,7 +304,7 @@ PrefabInstance:
     - target: {fileID: 4437151203084375225, guid: 5d6d0819c573c1046b26676a28573fc3,
         type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5635730540782298622, guid: 5d6d0819c573c1046b26676a28573fc3,
         type: 3}
@@ -1304,7 +1304,7 @@ PrefabInstance:
     - target: {fileID: 6759095419728963412, guid: 8894fa7e4588a5c4fab98453e558847d,
         type: 3}
       propertyPath: DynamicMaterials.Array.size
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6759095419728963412, guid: 8894fa7e4588a5c4fab98453e558847d,
         type: 3}
@@ -1795,7 +1795,7 @@ PrefabInstance:
     - target: {fileID: 3258420194863700279, guid: b7c6fcf83c505a54a9f2bb3ac2a4639b,
         type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4432120425424414615, guid: b7c6fcf83c505a54a9f2bb3ac2a4639b,
         type: 3}

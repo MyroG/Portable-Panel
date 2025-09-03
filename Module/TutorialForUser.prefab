@@ -48,7 +48,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: -1.39}
-  m_SizeDelta: {x: 1439.5, y: 298.6}
+  m_SizeDelta: {x: 1333.91, y: 298.6}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &7484537063203090806
 Canvas:
@@ -1125,7 +1125,7 @@ MonoBehaviour:
   TextVR: 'To open the panel, bring your hands together, press {0}, and pull apart.
 
     In
-    one-handed mode, do the same with one hand.'
+    one-handed mode, press [Grab+Trigger].'
   TextDesktop: 'This world features a portable menu system.
 
     To open it, press

@@ -108,7 +108,7 @@ namespace myro
 		private const float TIME_INTERVAL_HAND_GESTURE = 0.3f;
 		private const float MAX_DISTANCE_HAND_GESTURE = 0.25f;
 		private const float PLACEMENT_DISTANCE_FROM_HEAD = 0.3f;
-		private const float CLOSING_HAND_DISTANCE = 0.15f;
+		private const float CLOSING_HAND_DISTANCE = 0.24f;
 
 		void OnEnable()
 		{
@@ -432,19 +432,19 @@ namespace myro
 
 			if (IsLeftControllerOn())
 			{
-				if (GestureMode == EGestureMode.Both || GestureMode == EGestureMode.Grab)
+				if (GestureMode == EGestureMode.Both || GestureMode == EGestureMode.Grab || IsOneHanded())
 					ret.Add(Convert.ToInt32(EAllowedInputs.GRAB_LEFT));
 
-				if (GestureMode == EGestureMode.Both || GestureMode == EGestureMode.Trigger)
+				if (GestureMode == EGestureMode.Both || GestureMode == EGestureMode.Trigger || IsOneHanded())
 					ret.Add(Convert.ToInt32(EAllowedInputs.TRIGGER_LEFT));
 			}
 
 			if (IsRightControllerOn())
 			{
-				if (GestureMode == EGestureMode.Both || GestureMode == EGestureMode.Grab)
+				if (GestureMode == EGestureMode.Both || GestureMode == EGestureMode.Grab || IsOneHanded())
 					ret.Add(Convert.ToInt32(EAllowedInputs.GRAB_RIGHT));
 
-				if (GestureMode == EGestureMode.Both || GestureMode == EGestureMode.Trigger)
+				if (GestureMode == EGestureMode.Both || GestureMode == EGestureMode.Trigger || IsOneHanded())
 					ret.Add(Convert.ToInt32(EAllowedInputs.TRIGGER_RIGHT));
 			}
 
@@ -517,6 +517,7 @@ namespace myro
 				&& (!IsPanelOpen() || !IsOneHanded()) //No scaling in one handed mode, because it prevents the panel from being grabbed
 				&& Mathf.Abs(_timeStartTrigger - _timeEndTrigger) < TIME_INTERVAL_HAND_GESTURE)
 			{
+				if (IsPanelOpen() && _grabbed == EGrabbed.BOTH_HANDS) return;
 				var dist = CurrentHandsDistance(true);
 
 				if (dist >= ScaleValueToAvatar(MAX_DISTANCE_HAND_GESTURE) && !IsPanelOpen()) return;
@@ -540,26 +541,8 @@ namespace myro
 				}
 
 				_grabbed = EGrabbed.BOTH_HANDS;
-				return;
 			}
-
-			if (!IsDoingGesture())
-			{
-				//No more gestures => Dropping the panel
-				_forceStateOfPanel = EForceState.NONE;
-
-				OnPanelDrop();
-
-				if (IsPanelOpen() && _panelTransf.localScale.x < ScaleValueToAvatar(CLOSING_HAND_DISTANCE))
-				{
-					CloseOrRespawnPanel();
-				}
-
-				_grabbed = EGrabbed.NONE;
-				return;
-			}
-
-			if (IsDoingGrabbingPanelGesture())
+			else if (IsDoingGrabbingPanelGesture())
 			{
 				//Grab gesture with one hand :
 				//- If the player previously grabbed the panel with both hands, we can add a little delay before "ungrabbing" the panel to avoid accidental 
@@ -576,6 +559,21 @@ namespace myro
 				{
 					AttachToHand();
 				}
+			}
+			else
+			{
+				//No more gestures => Dropping the panel
+				_forceStateOfPanel = EForceState.NONE;
+
+				OnPanelDrop();
+
+				if (IsPanelOpen() && _panelTransf.localScale.x < ScaleValueToAvatar(CLOSING_HAND_DISTANCE))
+				{
+					CloseOrRespawnPanel();
+				}
+
+				_grabbed = EGrabbed.NONE;
+				return;
 			}
 		}
 
