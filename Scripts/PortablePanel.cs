@@ -48,6 +48,13 @@ namespace myro
 		TRIGGER_RIGHT
 	}
 
+	public enum EConstrained
+	{
+		None,
+		Position,
+		View
+	}
+
 	[UdonBehaviourSyncMode(BehaviourSyncMode.None)]
 	[DefaultExecutionOrder(500)]
 	public class PortablePanel : UdonSharpBehaviour
@@ -67,8 +74,9 @@ namespace myro
 		public float MinScale = 0.1f;
 		public float MaxDistanceBeforeClosingThePanel = 2f;
 		public float PanelScaleOnDesktop = 0.5f;
-
 		public bool SetOwnerOnPickup = false;
+		public EConstrained _constraintMode = EConstrained.None;
+		[SerializeField] private bool _isLocked = false;
 
 		[Header("Advanced settings, change them only if you really need to")]
 		[SerializeField]
@@ -96,10 +104,16 @@ namespace myro
 		//Boleans used to open or close the panel without player inputs
 		private EForceState _forceStateOfPanel;
 
-		//Her we are saving the transforms of the panel, so we can respawn it with the original scale.
+		//Here we are saving the transforms of the panel, so we can respawn it with the original scale.
 		private Vector3 _position;
 		private Quaternion _rotation;
 		private Vector3 _scale;
+
+
+		//Here we are saving the transforms of the panel for relative offsets when using position or view constrained.
+		private Vector3 _constraintOffsetPosition;
+		private Quaternion _constraintOffsetRotation;
+		private Vector3 _positionConstraintOffset;
 
 		private bool _isPanelOpen;
 		private bool _init;
@@ -109,6 +123,11 @@ namespace myro
 		private const float MAX_DISTANCE_HAND_GESTURE = 0.25f;
 		private const float PLACEMENT_DISTANCE_FROM_HEAD = 0.3f;
 		private const float CLOSING_HAND_DISTANCE = 0.24f;
+
+		private Vector3 _pickupOffsetDirection;
+		private float _pickupBaseDistance;
+		private const float JOYSTICK_DEADZONE = 0.1f;
+		private const float PUSH_PULL_SENSITIVITY = 0.5f;
 
 		void OnEnable()
 		{
@@ -160,9 +179,31 @@ namespace myro
 		#region Public methods
 
 		/// <summary>
-		/// Sets the "pickupable" state of your panel. This will also work for VRCPickups
+		/// Sets the "Tab on Hold" behavior for the panel.
+		/// When true, the panel remains open while holding Tab.
+		/// When false, Tab toggles the panel open/closed.
 		/// </summary>
-		/// <param name="newPickupableState">The new pickupable state</param>
+		public void SetTabOnHold(bool isTabOnHold)
+		{
+			if (TabOnHold != isTabOnHold)
+			{
+				TabOnHold = isTabOnHold;
+			}
+		}
+
+		/// <summary>
+		/// Toggles the "Tab on Hold" behavior of the panel.
+		/// </summary>
+		public void _ToggleTabOnHold()
+		{
+			SetTabOnHold(!TabOnHold);
+		}
+
+
+		/// <summary>
+		/// Sets the "tab on hold" state of your panel. This will also work for VRCPickups
+		/// </summary>
+		/// <param name="newPickupableState">The new tab on hold state</param>
 		public void SetPickupable(bool newPickupableState)
 		{
 			_isPickupable = newPickupableState;
@@ -196,13 +237,100 @@ namespace myro
 			return _isPickupable;
 		}
 
+		/// <summary>
+		/// Sets the constraint mode for the panel.
+		/// NONE: Panel is not constrained
+		/// Position: Panel follows player position but maintains its own rotation
+		/// View: Panel is locked to head position and rotation
+		/// </summary>
+		public void SetConstraintMode(EConstrained constraintMode)
+		{
+			if (_constraintMode != constraintMode)
+			{
+				_constraintMode = constraintMode;
+				if (_isPanelOpen && constraintMode != EConstrained.None)
+				{
+					CacheConstraintOffsets();
+				}
+			}
+		}
+
+		/// <summary>
+		/// Sets the view constraint mode for the panel.
+		/// When enabled, panel stays locked to head rotation.
+		/// </summary>
+		public void SetViewConstrained(bool isViewConstrained)
+		{
+			SetConstraintMode(isViewConstrained ? EConstrained.View : EConstrained.None);
+		}
+
+		/// <summary>
+		/// Sets the position constraint mode for the panel.
+		/// When enabled, panel follows player position but maintains its own rotation.
+		/// </summary>
+		public void SetPositionConstrained(bool isPositionConstrained)
+		{
+			SetConstraintMode(isPositionConstrained ? EConstrained.Position : EConstrained.None);
+		}
+
+		/// <summary>
+		/// Toggles the view constraint mode of the panel.
+		/// </summary>
+		public void _ToggleViewConstrained()
+		{
+			if (_constraintMode == EConstrained.View)
+			{
+				SetConstraintMode(EConstrained.None);
+			}
+			else
+			{
+				SetConstraintMode(EConstrained.View);
+			}
+		}
+
+		/// <summary>
+		/// Toggles the position constraint mode of the panel.
+		/// </summary>
+		public void _TogglePositionConstrained()
+		{
+			if (_constraintMode == EConstrained.Position)
+			{
+				SetConstraintMode(EConstrained.None);
+			}
+			else
+			{
+				SetConstraintMode(EConstrained.Position);
+			}
+		}
+
+		/// <summary>
+		/// Returns true if the panel is view constrained.
+		/// </summary>
+		public bool IsViewConstrained()
+		{
+			return _constraintMode == EConstrained.View;
+		}
+
+		/// <summary>
+		/// Returns true if the panel is position constrained.
+		/// </summary>
+		public bool IsPositionConstrained()
+		{
+			return _constraintMode == EConstrained.Position;
+		}
+
+		/// <summary>
+		/// Returns the current constraint mode.
+		/// </summary>
+		public EConstrained GetConstraintMode()
+		{
+			return _constraintMode;
+		}
 
 		public bool IsPanelOpen()
 		{
 			return _isPanelOpen;
 		}
-
-		
 
 		public void ForceClosePanel()
 		{
@@ -219,16 +347,42 @@ namespace myro
 			}
 		}
 
+		/// <summary>
+		/// Sets the locked state of the panel.
+		/// When locked, the panel cannot be grabbed, moved, or resized.
+		/// This will reset if the panel is closed or respawned.
+		/// </summary>
+		public void SetLocked(bool isLocked)
+		{
+			_isLocked = isLocked;
+		}
+
+		/// <summary>
+		/// Toggles the locked state of the panel.
+		/// </summary>
+		public void _ToggleLocked()
+		{
+			SetLocked(!_isLocked);
+		}
+
+		/// <summary>
+		/// Returns true if the panel is locked.
+		/// </summary>
+		public bool IsLocked()
+		{
+			return _isLocked;
+		}
+
 		public void ForceOpenPanel(float unscaledDistance)
 		{
 			if (!IsPanelOpen())
 			{
 				OpenPanel();
-				
+
 				PlacePanelInFrontOfPlayer(unscaledDistance);
 
 				if (!_localPlayer.IsUserInVR())
-				{ 
+				{
 					_forceStateOfPanel = EForceState.FORCE_OPEN;
 				}
 			}
@@ -261,7 +415,6 @@ namespace myro
 
 		public void RespawnPanel()
 		{
-			//we currently just need to close it
 			CloseOrRespawnPanel();
 		}
 
@@ -346,6 +499,7 @@ namespace myro
 				}
 			}
 			_isPanelOpen = false;
+			_isLocked = false;
 		}
 
 		private void OpenPanel()
@@ -511,8 +665,54 @@ namespace myro
 			return Vector3.Distance(l, r);
 		}
 
+		/// <summary>
+		/// Caches the offset between the panel and the player's head for constraint calculations.
+		/// Stores position in head-local space and rotation as a relative quaternion.
+		/// </summary>
+		private void CacheConstraintOffsets()
+		{
+			VRCPlayerApi.TrackingData headData = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head);
+			
+			if (_constraintMode == EConstrained.View)
+			{
+				_constraintOffsetPosition = Quaternion.Inverse(headData.rotation) * (_panelTransf.position - headData.position);
+				_constraintOffsetRotation = Quaternion.Inverse(headData.rotation) * _panelTransf.rotation;
+			}
+			else if (_constraintMode == EConstrained.Position)
+			{
+				_positionConstraintOffset = _panelTransf.position - _localPlayer.GetPosition();
+			}
+		}
+
+		/// <summary>
+		/// Applies the player constraint to the panel.
+		/// </summary>
+		private void ApplyPlayerConstraint()
+		{
+			if (!_localPlayer.IsUserInVR()) return;
+			if (_constraintMode == EConstrained.None || _grabbed != EGrabbed.NONE) return;
+
+			VRCPlayerApi.TrackingData headData = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head);
+			SetOwner();
+
+			if (_constraintMode == EConstrained.View)
+			{
+				_panelTransf.position = headData.position + (headData.rotation * _constraintOffsetPosition);
+				_panelTransf.rotation = headData.rotation * _constraintOffsetRotation;
+			}
+			else if (_constraintMode == EConstrained.Position)
+			{
+				_panelTransf.position = _localPlayer.GetPosition() + _positionConstraintOffset;
+			}
+		}
+
 		private void HandleInput(bool value, UdonInputEventArgs args)
 		{
+			if (_isLocked)
+			{
+				return;
+			}
+			
 			if (IsDoingOpeningPanelGesture() 
 				&& (!IsPanelOpen() || !IsOneHanded()) //No scaling in one handed mode, because it prevents the panel from being grabbed
 				&& Mathf.Abs(_timeStartTrigger - _timeEndTrigger) < TIME_INTERVAL_HAND_GESTURE)
@@ -520,7 +720,8 @@ namespace myro
 				if (IsPanelOpen() && _grabbed == EGrabbed.BOTH_HANDS) return;
 				var dist = CurrentHandsDistance(true);
 
-				if (dist >= ScaleValueToAvatar(MAX_DISTANCE_HAND_GESTURE) && !IsPanelOpen()) return;
+				//fixed an odd bug where the player had to move away from the panel before they could open it
+				if (dist >= ScaleValueToAvatar(MAX_DISTANCE_HAND_GESTURE) && !IsPanelOpen() && CloseBehaviour == EClosingBehaviour.Closing) return;
 
 				//If the grab gesture is used on both hands, we open the panel
 				//but if the panel was already open, we rescale the panel
@@ -573,6 +774,11 @@ namespace myro
 				}
 
 				_grabbed = EGrabbed.NONE;
+				
+				if (_isPanelOpen && _constraintMode != EConstrained.None)
+				{
+					CacheConstraintOffsets();
+				}
 				return;
 			}
 		}
@@ -679,14 +885,70 @@ namespace myro
 			_grabbed = EGrabbed.ONE_HANDED;
 			_startScale = _panelTransf.localScale.x;
 			_currentScale = _startScale;
+			
+			if (_localPlayer.IsUserInVR())
+			{
+				Vector3 headPos = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
+				_pickupOffsetDirection = (_panelTransf.position - headPos).normalized;
+				_pickupBaseDistance = Vector3.Distance(headPos, _panelTransf.position);
+			}
+			
 			OnPanelGrab();
+			
+			if (_constraintMode != EConstrained.None)
+			{
+				CacheConstraintOffsets();
+			}
 		}
 
 		public void _PanelDropped()
 		{
 			_grabbed = EGrabbed.NONE;
 			OnPanelDrop();
+
+			if (_isPanelOpen && _constraintMode != EConstrained.None)
+			{
+				CacheConstraintOffsets();
+			}
 		}
+		//Couldn't get this to work... It would be nice if this could be push/pulled with the right stick when held.
+		// private float GetRightStickVertical()
+		// {
+		// 	float input = 0f;
+			
+		// 	string[] axesToTry;
+			
+		// 	if (_panelAttachedToHand == VRCPlayerApi.TrackingDataType.LeftHand)
+		// 	{
+		// 		axesToTry = new string[] {
+		// 			"Oculus_CrossPlatform_SecondaryThumbstickVertical",
+		// 			"Vertical2",
+		// 			"LeftStickVertical",
+		// 			"Joy1 Axis 2"
+		// 		};
+		// 	}
+		// 	else
+		// 	{
+		// 		axesToTry = new string[] {
+		// 			"Oculus_CrossPlatform_PrimaryThumbstickVertical", 
+		// 			"Vertical",
+		// 			"RightStickVertical",
+		// 			"Joy1 Axis 5"
+		// 		};
+		// 	}
+			
+		// 	foreach (string axis in axesToTry)
+		// 	{
+		// 		float axisValue = UnityEngine.Input.GetAxis(axis);
+		// 		if (Mathf.Abs(axisValue) > JOYSTICK_DEADZONE)
+		// 		{
+		// 			input = axisValue;
+		// 			break;
+		// 		}
+		// 	}
+			
+		// 	return input;
+		// }
 
 		public override void PostLateUpdate()
 		{
@@ -704,6 +966,10 @@ namespace myro
 						if (!IsPanelOpen())
 						{
 							OpenPanel();
+							if (_constraintMode != EConstrained.None)
+							{
+								CacheConstraintOffsets();
+							}
 						}
 						PlacePanelInFrontOfPlayer();
 
@@ -731,6 +997,10 @@ namespace myro
 					if (!IsPanelOpen() && (tabPressedDown || _forceStateOfPanel == EForceState.FORCE_OPEN))
 					{
 						OpenPanel();
+						if (_constraintMode != EConstrained.None)
+						{
+							CacheConstraintOffsets();
+						}
 						PlacePanelInFrontOfPlayer();
 
 						_forceStateOfPanel = EForceState.NONE;
@@ -750,6 +1020,10 @@ namespace myro
 					{
 						CloseOrRespawnPanel();
 					}
+					else if (IsPanelOpen() && _localPlayer.IsUserInVR())
+					{
+						ApplyPlayerConstraint();
+					}
 					return;
 				}
 				else if (_grabbed == EGrabbed.ONE_HANDED)
@@ -758,8 +1032,39 @@ namespace myro
 					{
 						VRCPlayerApi.TrackingData hand = _localPlayer.GetTrackingData(_panelAttachedToHand);
 						SetOwner();
-						_panelTransf.position = (hand.position + (hand.rotation * _offsetPosition));
-						_panelTransf.rotation = (hand.rotation * _offsetRotation);
+						
+						if (_localPlayer.IsUserInVR())
+						{
+							// float stickInput = GetRightStickVertical();
+							
+							// if (Mathf.Abs(stickInput) > JOYSTICK_DEADZONE)
+							// {
+							// 	_pickupBaseDistance += stickInput * PUSH_PULL_SENSITIVITY * Time.deltaTime;
+							// 	_pickupBaseDistance = Mathf.Clamp(_pickupBaseDistance, ScaleValueToAvatar(0.3f), ScaleValueToAvatar(3f));
+								
+							// 	Vector3 headPos = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
+							// 	Vector3 targetPosition = headPos + _pickupOffsetDirection * _pickupBaseDistance;
+								
+							// 	_panelTransf.position = targetPosition;
+							// 	_panelTransf.rotation = hand.rotation * _offsetRotation;
+							// }
+							// else
+							// {
+								_panelTransf.position = hand.position + (hand.rotation * _offsetPosition);
+								_panelTransf.rotation = hand.rotation * _offsetRotation;
+							// }
+						}
+						else
+						{
+							_panelTransf.position = hand.position + (hand.rotation * _offsetPosition);
+							_panelTransf.rotation = hand.rotation * _offsetRotation;
+						}
+						
+						// Update constraint offsets for when we release
+						if (_constraintMode != EConstrained.None)
+						{
+							CacheConstraintOffsets();
+						}
 					}
 				}
 				else
@@ -775,7 +1080,7 @@ namespace myro
 					{
 						Vector3 left = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).position;
 						Vector3 right = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).position;
-						origin = ((left + right) / 2.0f);
+						origin = (left + right) / 2.0f;
 					}
 					Vector3 headPos = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
 
@@ -788,6 +1093,7 @@ namespace myro
 				}
 			}
 		}
+
 
 		private void PlacePanelInFrontOfPlayer(float unscaledDistance = PLACEMENT_DISTANCE_FROM_HEAD)
 		{
