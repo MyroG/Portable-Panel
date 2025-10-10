@@ -63,46 +63,34 @@ namespace myro
 		[Header("See README file for additional help and infos")]
 		[Tooltip("The panel GameObject to show/hide and manipulate")]
 		public GameObject Panel;
-
 		[Tooltip("When true, holding Tab keeps the panel open. When false, Tab toggles open/closed")]
 		public bool TabOnHold = true;
-
 		[Tooltip("When true, the player must be stopped (or moving slow) to open/resize the panel")]
 		public bool RequireStopped = true;
-
 		[Tooltip("Choose which hand gestures can be used to interact with the panel")]
 		public EGestureMode GestureMode;
-
 		[Tooltip("Determines if the panel is hidden or respawned to original position when closed")]
 		public EClosingBehaviour CloseBehaviour;
-
 		[Tooltip("Maximum scale multiplier for the panel")]
 		public float MaxScale = 9999.0f;
-
 		[Tooltip("Minimum scale multiplier for the panel")]
 		public float MinScale = 0.1f;
-
 		[Tooltip("Distance in meters before the panel auto-closes in VR")]
 		public float MaxDistanceBeforeClosingThePanel = 2f;
-
 		[Tooltip("Scale of the panel when placed in front of the player on desktop")]
 		public float PanelScaleOnDesktop = 0.5f;
-
 		[Tooltip("When true, ownership of the panel is transferred to the local player on pickup")]
 		public bool SetOwnerOnPickup = false;
-
 		[Tooltip("Constrains the panel to follow the player's position and/or view")]
 		public EConstrained _constraintMode = EConstrained.None;
+		[Tooltip("When true, the player is able to grab and move the panel.")]
+		[SerializeField] private bool _isPickupable = true;
+		private bool _isLocked = false; // Should always start false, so no need to expose this. The player can do _ToggleLocked at runtime to manipulate it.
+		[Header("Advanced settings, change them only if you really need to")]
+		[SerializeField] private bool _delayInitialisation = false;
 		private Transform _panelTransf;
 		private const float MAX_GRAB_SPEED = 1f; // This could be a slider, but it seems like such a minor thing that it may as well be a private variable.
 		private PortablePanelPickupModule _pickupModule;
-		[SerializeField] private bool _isPickupable = true;
-		[SerializeField] private bool _isLocked = false;
-
-		[Header("Advanced settings, change them only if you really need to")]
-		[SerializeField]
-		private bool _delayInitialisation = false;
-
 		private VRCPlayerApi _localPlayer;
 		private EGrabbed _grabbed;
 		private DataList _triggeredInputList;
@@ -159,6 +147,8 @@ namespace myro
 
 		private void Start()
 		{
+			
+    		_isLocked = false;
 			_isUsingViveControllers = IsViveController();
 
 			SetRespawnPoint(_panelTransf.position,
