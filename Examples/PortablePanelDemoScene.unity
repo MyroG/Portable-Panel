@@ -379,8 +379,13 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7931822506685154742, guid: 5d6d0819c573c1046b26676a28573fc3,
         type: 3}
-      propertyPath: GestureMode
-      value: 2
+      propertyPath: CloseBehaviour
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7931822506685154742, guid: 5d6d0819c573c1046b26676a28573fc3,
+        type: 3}
+      propertyPath: ConstraintMode
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7931822506685154742, guid: 5d6d0819c573c1046b26676a28573fc3,
         type: 3}

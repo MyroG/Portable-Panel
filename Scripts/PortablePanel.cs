@@ -691,22 +691,27 @@ namespace myro
 			return velocity.magnitude <= MAX_GRAB_SPEED;
 		}
 
+		private VRCPlayerApi.TrackingData GetTrackingDataForPlayerConstraints()
+		{
+			return _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Origin);
+		}
+
 		/// <summary>
 		/// Caches the offset between the panel and the player's head for constraint calculations.
 		/// Stores position in head-local space and rotation as a relative quaternion.
 		/// </summary>
 		private void CacheConstraintOffsets()
 		{
-			VRCPlayerApi.TrackingData headData = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Origin);
+			VRCPlayerApi.TrackingData trackingData = GetTrackingDataForPlayerConstraints();
 			
 			if (ConstraintMode == EConstrained.View)
 			{
-				_constraintOffsetPosition = Quaternion.Inverse(headData.rotation) * (_panelTransf.position - headData.position);
-				_constraintOffsetRotation = Quaternion.Inverse(headData.rotation) * _panelTransf.rotation;
+				_constraintOffsetPosition = Quaternion.Inverse(trackingData.rotation) * (_panelTransf.position - trackingData.position);
+				_constraintOffsetRotation = Quaternion.Inverse(trackingData.rotation) * _panelTransf.rotation;
 			}
 			else if (ConstraintMode == EConstrained.Position)
 			{
-				_positionConstraintOffset = _panelTransf.position - _localPlayer.GetPosition();
+				_positionConstraintOffset = _panelTransf.position - trackingData.position;
 				_constraintOffsetRotation = _panelTransf.rotation;
 			}
 		}
@@ -720,17 +725,18 @@ namespace myro
 			if (!_localPlayer.IsUserInVR()) return;
 			if (ConstraintMode == EConstrained.None || _grabbed != EGrabbed.NONE) return;
 
-			VRCPlayerApi.TrackingData headData = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Origin);
+			VRCPlayerApi.TrackingData trackingData = GetTrackingDataForPlayerConstraints();
+
 			SetOwner();
 
 			if (ConstraintMode == EConstrained.View)
 			{
-				_panelTransf.position = headData.position + (headData.rotation * _constraintOffsetPosition);
-				_panelTransf.rotation = headData.rotation * _constraintOffsetRotation;
+				_panelTransf.position = trackingData.position + (trackingData.rotation * _constraintOffsetPosition);
+				_panelTransf.rotation = trackingData.rotation * _constraintOffsetRotation;
 			}
 			else if (ConstraintMode == EConstrained.Position)
 			{
-				_panelTransf.position = _localPlayer.GetPosition() + _positionConstraintOffset;
+				_panelTransf.position = trackingData.position + _positionConstraintOffset;
 				_panelTransf.rotation = _constraintOffsetRotation;
 			}
 		}
@@ -751,7 +757,7 @@ namespace myro
 				var dist = CurrentHandsDistance(true);
 
 				//fixed an odd bug where the player had to move away from the panel before they could open it
-				if (dist >= ScaleValueToAvatar(MAX_DISTANCE_HAND_GESTURE) && !IsPanelOpen() && CloseBehaviour == EClosingBehaviour.Closing) return;
+				if (dist >= ScaleValueToAvatar(MAX_DISTANCE_HAND_GESTURE) && !IsPanelOpen()) return;
 
 				//If the grab gesture is used on both hands, we open the panel
 				//but if the panel was already open, we rescale the panel

@@ -23,6 +23,8 @@ namespace myro
 		{
 			PanelRigidBody.velocity = Vector3.zero;
 			PanelRigidBody.angularVelocity = Vector3.zero;
+
+			PanelRigidBody.isKinematic = true;
 		}
 
 		public override void OnStart()
@@ -36,6 +38,12 @@ namespace myro
 				_particleSystemRB.isKinematic = true;
 				PanelRigidBody.isKinematic = true;
 			}
+		}
+
+		public override bool OnPanelOpening()
+		{
+			PanelRigidBody.isKinematic = false;
+			return true;
 		}
 
 		public override void OnPanelGrab()
