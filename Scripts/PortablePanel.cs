@@ -1,15 +1,9 @@
-using PortMidi;
 using System;
-using System.Linq;
 using UdonSharp;
-using Unity.Burst.Intrinsics;
 using UnityEngine;
-using UnityEngine.Windows;
 using VRC.SDK3.Data;
 using VRC.SDKBase;
-using VRC.Udon;
 using VRC.Udon.Common;
-using static VRC.Dynamics.CollisionShapes;
 
 namespace myro
 {
@@ -81,7 +75,7 @@ namespace myro
 		[Tooltip("When true, ownership of the panel is transferred to the local player on pickup")]
 		public bool SetOwnerOnPickup = false;
 		[Tooltip("Constrains the panel to follow the player's position and/or view")]
-		public EConstrained _constraintMode = EConstrained.None;
+		public EConstrained ConstraintMode = EConstrained.None;
 		[Tooltip("When true, the player is able to grab and move the panel.")]
 		[SerializeField] private bool _isPickupable = true;
 		private bool _isLocked = false; // Should always start false, so no need to expose this. The player can do _ToggleLocked at runtime to manipulate it.
@@ -126,6 +120,7 @@ namespace myro
 		private bool _isPanelOpen;
 		private bool _init;
 		private bool _isUsingViveControllers;
+		private bool _grabCalled, _dropCalled;
 
 		private const float TIME_INTERVAL_HAND_GESTURE = 0.3f;
 		private const float MAX_DISTANCE_HAND_GESTURE = 0.25f;
@@ -263,9 +258,9 @@ namespace myro
 		/// </summary>
 		public void SetConstraintMode(EConstrained constraintMode)
 		{
-			if (_constraintMode != constraintMode)
+			if (ConstraintMode != constraintMode)
 			{
-				_constraintMode = constraintMode;
+				ConstraintMode = constraintMode;
 				if (_isPanelOpen && constraintMode != EConstrained.None)
 				{
 					CacheConstraintOffsets();
@@ -296,7 +291,7 @@ namespace myro
 		/// </summary>
 		public void _ToggleViewConstrained()
 		{
-			if (_constraintMode == EConstrained.View)
+			if (ConstraintMode == EConstrained.View)
 			{
 				SetConstraintMode(EConstrained.None);
 			}
@@ -311,7 +306,7 @@ namespace myro
 		/// </summary>
 		public void _TogglePositionConstrained()
 		{
-			if (_constraintMode == EConstrained.Position)
+			if (ConstraintMode == EConstrained.Position)
 			{
 				SetConstraintMode(EConstrained.None);
 			}
@@ -326,7 +321,7 @@ namespace myro
 		/// </summary>
 		public bool IsViewConstrained()
 		{
-			return _constraintMode == EConstrained.View;
+			return ConstraintMode == EConstrained.View;
 		}
 
 		/// <summary>
@@ -334,7 +329,7 @@ namespace myro
 		/// </summary>
 		public bool IsPositionConstrained()
 		{
-			return _constraintMode == EConstrained.Position;
+			return ConstraintMode == EConstrained.Position;
 		}
 
 		/// <summary>
@@ -342,7 +337,7 @@ namespace myro
 		/// </summary>
 		public EConstrained GetConstraintMode()
 		{
-			return _constraintMode;
+			return ConstraintMode;
 		}
 
 		public bool IsPanelOpen()
@@ -702,18 +697,20 @@ namespace myro
 		/// </summary>
 		private void CacheConstraintOffsets()
 		{
-			VRCPlayerApi.TrackingData headData = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head);
+			VRCPlayerApi.TrackingData headData = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Origin);
 			
-			if (_constraintMode == EConstrained.View)
+			if (ConstraintMode == EConstrained.View)
 			{
 				_constraintOffsetPosition = Quaternion.Inverse(headData.rotation) * (_panelTransf.position - headData.position);
 				_constraintOffsetRotation = Quaternion.Inverse(headData.rotation) * _panelTransf.rotation;
 			}
-			else if (_constraintMode == EConstrained.Position)
+			else if (ConstraintMode == EConstrained.Position)
 			{
 				_positionConstraintOffset = _panelTransf.position - _localPlayer.GetPosition();
+				_constraintOffsetRotation = _panelTransf.rotation;
 			}
 		}
+
 
 		/// <summary>
 		/// Applies the player constraint to the panel.
@@ -721,19 +718,20 @@ namespace myro
 		private void ApplyPlayerConstraint()
 		{
 			if (!_localPlayer.IsUserInVR()) return;
-			if (_constraintMode == EConstrained.None || _grabbed != EGrabbed.NONE) return;
+			if (ConstraintMode == EConstrained.None || _grabbed != EGrabbed.NONE) return;
 
-			VRCPlayerApi.TrackingData headData = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head);
+			VRCPlayerApi.TrackingData headData = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Origin);
 			SetOwner();
 
-			if (_constraintMode == EConstrained.View)
+			if (ConstraintMode == EConstrained.View)
 			{
 				_panelTransf.position = headData.position + (headData.rotation * _constraintOffsetPosition);
 				_panelTransf.rotation = headData.rotation * _constraintOffsetRotation;
 			}
-			else if (_constraintMode == EConstrained.Position)
+			else if (ConstraintMode == EConstrained.Position)
 			{
 				_panelTransf.position = _localPlayer.GetPosition() + _positionConstraintOffset;
+				_panelTransf.rotation = _constraintOffsetRotation;
 			}
 		}
 
@@ -807,7 +805,7 @@ namespace myro
 
 				_grabbed = EGrabbed.NONE;
 				
-				if (_isPanelOpen && _constraintMode != EConstrained.None && IsPlayerSpeedWithinGrabThreshold())
+				if (_isPanelOpen && ConstraintMode != EConstrained.None && IsPlayerSpeedWithinGrabThreshold())
 				{
 					CacheConstraintOffsets();
 				}
@@ -927,7 +925,7 @@ namespace myro
 			
 			OnPanelGrab();
 			
-			if (_constraintMode != EConstrained.None)
+			if (ConstraintMode != EConstrained.None)
 			{
 				CacheConstraintOffsets();
 			}
@@ -938,7 +936,7 @@ namespace myro
 			_grabbed = EGrabbed.NONE;
 			OnPanelDrop();
 
-			if (_isPanelOpen && _constraintMode != EConstrained.None && IsPlayerSpeedWithinGrabThreshold())
+			if (_isPanelOpen && ConstraintMode != EConstrained.None && IsPlayerSpeedWithinGrabThreshold())
 			{
 				CacheConstraintOffsets();
 			}
@@ -998,7 +996,7 @@ namespace myro
 				if (!IsPanelOpen())
 				{
 					OpenPanel();
-					if (_constraintMode != EConstrained.None)
+					if (ConstraintMode != EConstrained.None)
 					{
 						CacheConstraintOffsets();
 					}
@@ -1029,7 +1027,7 @@ namespace myro
 			if (!IsPanelOpen() && ((tabPressedDown && IsPlayerSpeedWithinGrabThreshold()) || _forceStateOfPanel == EForceState.FORCE_OPEN))
 			{
 				OpenPanel();
-				if (_constraintMode != EConstrained.None)
+				if (ConstraintMode != EConstrained.None)
 				{
 					CacheConstraintOffsets();
 				}
@@ -1092,7 +1090,7 @@ namespace myro
 					_panelTransf.rotation = hand.rotation * _offsetRotation;
 				}
 				
-				if (_constraintMode != EConstrained.None)
+				if (ConstraintMode != EConstrained.None)
 				{
 					CacheConstraintOffsets();
 				}
