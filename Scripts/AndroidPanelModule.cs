@@ -34,9 +34,9 @@ namespace myro
 			}
 		}
 
-		public bool IsPlayerOnAndroid()
+		public bool IsPlayerOnPhone()
 		{
-#if UNITY_ANDROID
+#if UNITY_ANDROID || UNITY_IOS
 		return !Networking.LocalPlayer.IsUserInVR();
 #else
 			return false;
@@ -47,7 +47,7 @@ namespace myro
 		{
 			if (player.isLocal)
 			{
-				CanvasInstance.gameObject.SetActive(IsPlayerOnAndroid());
+				CanvasInstance.gameObject.SetActive(IsPlayerOnPhone());
 			}
 		}
 	}

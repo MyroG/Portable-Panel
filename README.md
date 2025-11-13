@@ -59,14 +59,16 @@ If your panel is a VRCPickup :
 2) Attach the `PortablePanelPickupModule` script next to the VRCPickup component. the `Portable Panel Reference` field should point towards the `Portable Panel` component added in step 1.
 3) The `PortablePanel` script has a `Panel` field, make sure that field points towards your panel.
 
-### Android Smartphone
+### Smartphones
 
 ![Parameters](https://github.com/MyroG/Portable-Panel/blob/main/_Doc/Android.PNG)
 
-The prefab `AndroidPanelModule` adds an overlay so the Panel can easily be opened and closed on Android devices, it adds a screen space canvas with a button, the android panel can be customized if needed.
-I would recommend to add it into your scene so Android users can open the panel on their device, the field `Portable Panel Instance` needs to reference your panel.
+The prefab `AndroidPanelModule` adds an overlay so the Panel can easily be opened and closed on mobile devices (Android and IOS), it adds a screen space canvas with a button, the overlay can be customized if needed.
+I would recommend to add it into your scene so mobile users can open the panel on their device, the field `Portable Panel Instance` needs to reference your panel.
 
 You'll notice that the "Canvas" GameObject attached as a child is turned off by default, it should be off by default, this is to ensure that the canvas doesn't get shown on the VRChat loading screen.
+
+That prefab also works on IOS, ignore the bad naming scheme of that prefab.
 
 ### Tutorial for players in your world
 
@@ -100,6 +102,8 @@ Certain settings like `Max Scale`, `Min Scale`, `Max Distance Before Closing The
 | Panel Scale On Desktop               | Desktop-only setting: Scale of the panel for Desktop users.                                                            |
 | Delay Initialisation                 | This is an ugly hack to prevent certain prefabs to break.<br />When you launch the instance, the panel gets automatically hidden from the player, and that during the loading screen. In most cases, that shouldn't cause any issues, but hiding the panel disables any script that is attached to that panel, which can break certain scripts that really need to get initialised during the loading screen.<br />For instance, certain video player controls attached to the panel could break because of that. If that happens, you can check that checkbox, this will initialise the panel shortly before the loading screen ends, and ensure that most prefabs attached to that panel will initialise properly, the drawback is that you cannot disable the `PortablePanel` script at the start of the world, as it will break the script...|
 | Set Owner On Pickup                  | If you want to sync the position of the panel using an VRCObjectSync component, you should turn that checkbox on |
+| Require Stopped | If enabled, the panel can only be opened while the player is basically not moving. For instance, this can be useful in swimming worlds to prevent people from opening the panel while swimming.                                                                                                                                                                                          |
+| Constraint Mode | Defines how the panel behaves relative to the player:<br>• **None** – The panel stays where it got placed in world space.<br>• **Position** – The panel sits in the player's playspace and moves with them.<br>• **View** – The panel stays in front of the player's face like a HUD |
 
  
 ## Events 
@@ -129,6 +133,15 @@ A few public methods can be called from an external script :
 | `SetPickupable(bool newPickupableState)`     |        | Sets the "pickupable" state of your panel. This will also work for VRCPickups | The new pickupable state |
 | `TogglePickupable()`     |        | Toggles the "pickupable" state of your panel. This will also work for VRCPickups |  |
 | `IsPickupable()`     |  bool      | Returns true if the panel is pickupable |  |
+| `SetConstraintMode(EConstrained constraintMode)` || Sets the constraint mode for the panel. ||
+| `SetViewConstrained(bool isViewConstrained)` || Sets the view constraint mode for the panel. When enabled, panel stays locked to head rotation. ||
+| `SetPositionConstrained(bool isPositionConstrained)` || Sets the position constraint mode for the panel. When enabled, panel follows player position but maintains its own rotation.||
+| `_ToggleViewConstrained()` || Toggles the view constraint mode of the panel. ||
+| `_TogglePositionConstrained()` || Toggles the position constraint mode of the panel. ||
+| `IsViewConstrained()` | bool | Returns true if the panel is view constrained. ||
+| `IsPositionConstrained()` | bool | Returns true if the panel is position constrained. ||
+| `GetConstraintMode()` | EConstrained | Returns the current constraint mode. ||
+
 
 ## Constants
 I use three contants I didn't exposed in the inspector, because I didn't wanted to fill up the inspector with parameters no one will change, but if needed you can change them directly in the code.
