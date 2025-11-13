@@ -384,11 +384,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7931822506685154742, guid: 5d6d0819c573c1046b26676a28573fc3,
         type: 3}
-      propertyPath: ConstraintMode
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 7931822506685154742, guid: 5d6d0819c573c1046b26676a28573fc3,
-        type: 3}
       propertyPath: _constraintMode
       value: 0
       objectReference: {fileID: 0}
@@ -851,7 +846,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   interactTextPlacement: {fileID: 0}
-  interactText: Use
+  interactText: Make the panel grabbable or not
   interactTextGO: {fileID: 0}
   proximity: 2
   SynchronizePosition: 0
@@ -1005,6 +1000,11 @@ PrefabInstance:
         type: 3}
       propertyPath: GestureMode
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7443599571650023776, guid: b7c6fcf83c505a54a9f2bb3ac2a4639b,
+        type: 3}
+      propertyPath: ConstraintMode
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7443599571650023776, guid: b7c6fcf83c505a54a9f2bb3ac2a4639b,
         type: 3}

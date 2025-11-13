@@ -119,8 +119,6 @@ namespace myro
 
 		private bool _isPanelOpen;
 		private bool _init;
-		private bool _isUsingViveControllers;
-		private bool _grabCalled, _dropCalled;
 
 		private const float TIME_INTERVAL_HAND_GESTURE = 0.3f;
 		private const float MAX_DISTANCE_HAND_GESTURE = 0.25f;
@@ -143,7 +141,6 @@ namespace myro
 		{
 			
     		_isLocked = false;
-			_isUsingViveControllers = IsViveController();
 
 			SetRespawnPoint(_panelTransf.position,
 				_panelTransf.rotation,
@@ -834,28 +831,15 @@ namespace myro
 			HandleInput(value, args);
 		}
 
-		private bool IsViveController()
-		{
-			string[] joystickNames = UnityEngine.Input.GetJoystickNames();
-			foreach(var joystickName in joystickNames)
-			{
-				if (joystickName.ToLower().Contains("vive"))
-					return true;
-			}
-			return false;
-		}
-
 		public override void InputDrop(bool value, UdonInputEventArgs args)
 		{
-			if (!_init || !_isUsingViveControllers) return;
-
+			if (!_init) return;
 			HandleInputGrab(value, args);
 		}
 
 		public override void InputGrab(bool value, UdonInputEventArgs args)
 		{
-			if (!_init || _isUsingViveControllers) return;
-
+			if (!_init) return;
 			HandleInputGrab(value, args);
 		}
 
