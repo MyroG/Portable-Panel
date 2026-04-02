@@ -115,7 +115,7 @@ namespace myro
 		//Here we are saving the transforms of the panel for relative offsets when using position or view constrained.
 		private Vector3 _constraintOffsetPosition;
 		private Quaternion _constraintOffsetRotation;
-		private Vector3 _positionConstraintOffset;
+		//private Vector3 _positionConstraintOffset;
 
 		private bool _isPanelOpen;
 		private bool _init;
@@ -690,7 +690,14 @@ namespace myro
 
 		private VRCPlayerApi.TrackingData GetTrackingDataForPlayerConstraints()
 		{
-			return _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Origin);
+			if (ConstraintMode == EConstrained.View)
+			{
+				return _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head);
+			}
+			else
+			{
+				return _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Origin);
+			}
 		}
 
 		/// <summary>
@@ -700,17 +707,9 @@ namespace myro
 		private void CacheConstraintOffsets()
 		{
 			VRCPlayerApi.TrackingData trackingData = GetTrackingDataForPlayerConstraints();
-			
-			if (ConstraintMode == EConstrained.View)
-			{
-				_constraintOffsetPosition = Quaternion.Inverse(trackingData.rotation) * (_panelTransf.position - trackingData.position);
-				_constraintOffsetRotation = Quaternion.Inverse(trackingData.rotation) * _panelTransf.rotation;
-			}
-			else if (ConstraintMode == EConstrained.Position)
-			{
-				_positionConstraintOffset = _panelTransf.position - trackingData.position;
-				_constraintOffsetRotation = _panelTransf.rotation;
-			}
+
+			_constraintOffsetPosition = Quaternion.Inverse(trackingData.rotation) * (_panelTransf.position - trackingData.position);
+			_constraintOffsetRotation = Quaternion.Inverse(trackingData.rotation) * _panelTransf.rotation;
 		}
 
 
@@ -726,16 +725,8 @@ namespace myro
 
 			SetOwner();
 
-			if (ConstraintMode == EConstrained.View)
-			{
-				_panelTransf.position = trackingData.position + (trackingData.rotation * _constraintOffsetPosition);
-				_panelTransf.rotation = trackingData.rotation * _constraintOffsetRotation;
-			}
-			else if (ConstraintMode == EConstrained.Position)
-			{
-				_panelTransf.position = trackingData.position + _positionConstraintOffset;
-				_panelTransf.rotation = _constraintOffsetRotation;
-			}
+			_panelTransf.position = trackingData.position + (trackingData.rotation * _constraintOffsetPosition);
+			_panelTransf.rotation = trackingData.rotation * _constraintOffsetRotation;
 		}
 
 		private void HandleInput(bool value, UdonInputEventArgs args)
