@@ -971,147 +971,147 @@ namespace myro
 		// }
 
 		public override void PostLateUpdate()
-{
-	if (!_init) return;
-
-	if (!_localPlayer.IsUserInVR())
-	{
-		if (TabOnHold)
 		{
-			bool tabPressed = UnityEngine.Input.GetKey(KeyCode.Tab);
+			if (!_init) return;
 
-			if ((tabPressed && _forceStateOfPanel != EForceState.FORCE_CLOSE && IsPlayerSpeedWithinGrabThreshold())
-				|| _forceStateOfPanel == EForceState.FORCE_OPEN)
+			if (!_localPlayer.IsUserInVR())
 			{
-				if (!IsPanelOpen())
+				if (TabOnHold)
 				{
-					OpenPanel();
-					if (ConstraintMode != EConstrained.None)
+					bool tabPressed = UnityEngine.Input.GetKey(KeyCode.Tab);
+
+					if ((tabPressed && _forceStateOfPanel != EForceState.FORCE_CLOSE && IsPlayerSpeedWithinGrabThreshold())
+						|| _forceStateOfPanel == EForceState.FORCE_OPEN)
 					{
-						CacheConstraintOffsets();
+						if (!IsPanelOpen())
+						{
+							OpenPanel();
+							if (ConstraintMode != EConstrained.None)
+							{
+								CacheConstraintOffsets();
+							}
+						}
+						PlacePanelInFrontOfPlayer();
+
+						if (tabPressed)
+						{
+							_forceStateOfPanel = EForceState.NONE;
+						}
 					}
-				}
-				PlacePanelInFrontOfPlayer();
-
-				if (tabPressed)
-				{
-					_forceStateOfPanel = EForceState.NONE;
-				}
-			}
-			else if (!tabPressed || _forceStateOfPanel == EForceState.FORCE_CLOSE)
-			{
-				if (IsPanelOpen())
-				{
-					CloseOrRespawnPanel();
-				}
-				if (!tabPressed)
-				{
-					_forceStateOfPanel = EForceState.NONE;
-				}
-			}
-		}
-		else
-		{
-			bool tabPressedDown = UnityEngine.Input.GetKeyDown(KeyCode.Tab);
-
-			if (!IsPanelOpen() && ((tabPressedDown && IsPlayerSpeedWithinGrabThreshold()) || _forceStateOfPanel == EForceState.FORCE_OPEN))
-			{
-				OpenPanel();
-				if (ConstraintMode != EConstrained.None)
-				{
-					CacheConstraintOffsets();
-				}
-				PlacePanelInFrontOfPlayer();
-
-				_forceStateOfPanel = EForceState.NONE;
-			}
-			else if (IsPanelOpen() && (tabPressedDown || _forceStateOfPanel == EForceState.FORCE_CLOSE || PanelTooFarAway()))
-			{
-				CloseOrRespawnPanel();
-				_forceStateOfPanel = EForceState.NONE;
-			}
-		}
-	}
-	else
-	{
-		if (_grabbed == EGrabbed.NONE)
-		{
-			if (IsPanelOpen() && PanelTooFarAway())
-			{
-				CloseOrRespawnPanel();
-			}
-			else if (IsPanelOpen() && _localPlayer.IsUserInVR())
-			{
-				ApplyPlayerConstraint();
-			}
-			return;
-		}
-		else if (_grabbed == EGrabbed.ONE_HANDED)
-		{
-			if (_isPickupable && !_pickupModule)
-			{
-				VRCPlayerApi.TrackingData hand = _localPlayer.GetTrackingData(_panelAttachedToHand);
-				SetOwner();
-				
-				if (_localPlayer.IsUserInVR())
-				{
-					// float stickInput = GetRightStickVertical();
-					
-					// if (Mathf.Abs(stickInput) > JOYSTICK_DEADZONE)
-					// {
-					// 	_pickupBaseDistance += stickInput * PUSH_PULL_SENSITIVITY * Time.deltaTime;
-					// 	_pickupBaseDistance = Mathf.Clamp(_pickupBaseDistance, ScaleValueToAvatar(0.3f), ScaleValueToAvatar(3f));
-						
-					// 	Vector3 headPos = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
-					// 	Vector3 targetPosition = headPos + _pickupOffsetDirection * _pickupBaseDistance;
-						
-					// 	_panelTransf.position = targetPosition;
-					// 	_panelTransf.rotation = hand.rotation * _offsetRotation;
-					// }
-					// else
-					// {
-						_panelTransf.position = hand.position + (hand.rotation * _offsetPosition);
-						_panelTransf.rotation = hand.rotation * _offsetRotation;
-					// }
+					else if (!tabPressed || _forceStateOfPanel == EForceState.FORCE_CLOSE)
+					{
+						if (IsPanelOpen())
+						{
+							CloseOrRespawnPanel();
+						}
+						if (!tabPressed)
+						{
+							_forceStateOfPanel = EForceState.NONE;
+						}
+					}
 				}
 				else
 				{
-					_panelTransf.position = hand.position + (hand.rotation * _offsetPosition);
-					_panelTransf.rotation = hand.rotation * _offsetRotation;
+					bool tabPressedDown = UnityEngine.Input.GetKeyDown(KeyCode.Tab);
+
+					if (!IsPanelOpen() && ((tabPressedDown && IsPlayerSpeedWithinGrabThreshold()) || _forceStateOfPanel == EForceState.FORCE_OPEN))
+					{
+						OpenPanel();
+						if (ConstraintMode != EConstrained.None)
+						{
+							CacheConstraintOffsets();
+						}
+						PlacePanelInFrontOfPlayer();
+
+						_forceStateOfPanel = EForceState.NONE;
+					}
+					else if (IsPanelOpen() && (tabPressedDown || _forceStateOfPanel == EForceState.FORCE_CLOSE || PanelTooFarAway()))
+					{
+						CloseOrRespawnPanel();
+						_forceStateOfPanel = EForceState.NONE;
+					}
 				}
-				
-				if (ConstraintMode != EConstrained.None)
-				{
-					CacheConstraintOffsets();
-				}
-			}
-		}
-		else
-		{
-			float distance = CurrentHandsDistance(false);
-			Vector3 origin;
-			if (IsOneHanded())
-			{
-				distance *= 2.0f;
-				origin = _oneHandedOrigin;
 			}
 			else
 			{
-				Vector3 left = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).position;
-				Vector3 right = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).position;
-				origin = (left + right) / 2.0f;
-			}
-			Vector3 headPos = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
+				if (_grabbed == EGrabbed.NONE)
+				{
+					if (IsPanelOpen() && PanelTooFarAway())
+					{
+						CloseOrRespawnPanel();
+					}
+					else if (IsPanelOpen() && _localPlayer.IsUserInVR())
+					{
+						ApplyPlayerConstraint();
+					}
+					return;
+				}
+				else if (_grabbed == EGrabbed.ONE_HANDED)
+				{
+					if (_isPickupable && !_pickupModule)
+					{
+						VRCPlayerApi.TrackingData hand = _localPlayer.GetTrackingData(_panelAttachedToHand);
+						SetOwner();
+				
+						if (_localPlayer.IsUserInVR())
+						{
+							// float stickInput = GetRightStickVertical();
+					
+							// if (Mathf.Abs(stickInput) > JOYSTICK_DEADZONE)
+							// {
+							// 	_pickupBaseDistance += stickInput * PUSH_PULL_SENSITIVITY * Time.deltaTime;
+							// 	_pickupBaseDistance = Mathf.Clamp(_pickupBaseDistance, ScaleValueToAvatar(0.3f), ScaleValueToAvatar(3f));
+						
+							// 	Vector3 headPos = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
+							// 	Vector3 targetPosition = headPos + _pickupOffsetDirection * _pickupBaseDistance;
+						
+							// 	_panelTransf.position = targetPosition;
+							// 	_panelTransf.rotation = hand.rotation * _offsetRotation;
+							// }
+							// else
+							// {
+								_panelTransf.position = hand.position + (hand.rotation * _offsetPosition);
+								_panelTransf.rotation = hand.rotation * _offsetRotation;
+							// }
+						}
+						else
+						{
+							_panelTransf.position = hand.position + (hand.rotation * _offsetPosition);
+							_panelTransf.rotation = hand.rotation * _offsetRotation;
+						}
+				
+						if (ConstraintMode != EConstrained.None)
+						{
+							CacheConstraintOffsets();
+						}
+					}
+				}
+				else
+				{
+					float distance = CurrentHandsDistance(false);
+					Vector3 origin;
+					if (IsOneHanded())
+					{
+						distance *= 2.0f;
+						origin = _oneHandedOrigin;
+					}
+					else
+					{
+						Vector3 left = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).position;
+						Vector3 right = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).position;
+						origin = (left + right) / 2.0f;
+					}
+					Vector3 headPos = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
 
-			_currentScale = Mathf.Clamp(_startScale * distance / _startDistanceBetweenTwoHands, ScaleValueToAvatar(MinScale), ScaleValueToAvatar(MaxScale));
-			SetOwner();
-			_panelTransf.position = origin;
-			SetPanelScale(_currentScale);
-			_panelTransf.LookAt(headPos);
-			_panelTransf.forward = -_panelTransf.forward;
+					_currentScale = Mathf.Clamp(_startScale * distance / _startDistanceBetweenTwoHands, ScaleValueToAvatar(MinScale), ScaleValueToAvatar(MaxScale));
+					SetOwner();
+					_panelTransf.position = origin;
+					SetPanelScale(_currentScale);
+					_panelTransf.LookAt(headPos);
+					_panelTransf.forward = -_panelTransf.forward;
+				}
+			}
 		}
-	}
-}
 
 
 		private void PlacePanelInFrontOfPlayer(float unscaledDistance = PLACEMENT_DISTANCE_FROM_HEAD)

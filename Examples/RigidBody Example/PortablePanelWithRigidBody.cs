@@ -23,8 +23,6 @@ namespace myro
 		{
 			PanelRigidBody.velocity = Vector3.zero;
 			PanelRigidBody.angularVelocity = Vector3.zero;
-
-			PanelRigidBody.isKinematic = true;
 		}
 
 		public override void OnStart()
@@ -54,6 +52,12 @@ namespace myro
 
 		public override bool OnPanelClosing()
 		{
+			if (CloseBehaviour == EClosingBehaviour.Respawning)
+			{
+				//To prevent the panel from spinning if it respawns
+				PanelRigidBody.isKinematic = false;
+			}
+
 			//once the panel closes, let's just play a basic disintegration animation
 			//we first place the particle emitter at the exact location the panel was
 			ClosingParticleAnimation.transform.position = Panel.transform.position;
