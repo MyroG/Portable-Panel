@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c333ccfdd0cbdbc4ca30cef2dd6e6b9b, type: 3}
   m_Name: PortablePanelPickupModule
   m_EditorClassIdentifier: 
-  serializedUdonProgramAsset: {fileID: 11400000, guid: 2dd4796dc9c6ffd4d9b9e70b94968c63,
+  serializedUdonProgramAsset: {fileID: 11400000, guid: 5ecf528142a7f6f4c95606c17b171556,
     type: 2}
   udonAssembly: 
   assemblyError: 

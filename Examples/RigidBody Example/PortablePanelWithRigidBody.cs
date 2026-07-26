@@ -50,6 +50,16 @@ namespace myro
 			StopPanel();
 		}
 
+		public override void OnPanelDrop()
+		{
+			if (PanelRigidBody.velocity.magnitude < 0.1f && PanelRigidBody.angularVelocity.magnitude < 0.1f)
+			{
+				//We do not want the panel to slowly fly away when the panel got just barely thrown
+				StopPanel();
+			}
+		}
+
+
 		public override bool OnPanelClosing()
 		{
 			if (CloseBehaviour == EClosingBehaviour.Respawning)

@@ -1122,10 +1122,10 @@ MonoBehaviour:
   _udonSharpBackingUdonBehaviour: {fileID: 1380141601659111250}
   PortablePanel: {fileID: 0}
   PlaceInFrontOfPlayerForXSeconds: 7
-  TextVR: 'To open the panel, bring your hands together, press {0}, and pull apart.
+  TextVR: '{0} : Press while bringing your hands together, then pull apart to open
+    the panel.
 
-    In
-    one-handed mode, press [Grab+Trigger].'
+    [Grab+Trigger]  in one-handed mode.'
   TextDesktop: 'This world features a portable menu system.
 
     To open it, press

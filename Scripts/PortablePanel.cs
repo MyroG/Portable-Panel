@@ -2,6 +2,7 @@ using System;
 using UdonSharp;
 using UnityEngine;
 using VRC.SDK3.Data;
+using VRC.SDK3.Rendering;
 using VRC.SDKBase;
 using VRC.Udon.Common;
 
@@ -563,32 +564,56 @@ namespace myro
 			}
 		}
 
+		#region check if controller on
+
+		private Vector3 _previousControllerPositionLeft;
+		private Vector3 _previousControllerPositionRight;
+
+		private bool _isLeftControllerOn;
+		private bool _isRightControllerOn;
+
+		private void SetControllersOnState()
+		{
+			if (_localPlayer.IsUserInVR())
+			{
+				Vector3 leftHandPosition = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.LeftHand).position;
+				Vector3 rightHandPosition = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.RightHand).position;
+
+				_isLeftControllerOn = leftHandPosition != _previousControllerPositionLeft;
+				_isRightControllerOn = rightHandPosition != _previousControllerPositionRight;
+
+				_previousControllerPositionLeft = leftHandPosition;
+				_previousControllerPositionRight = rightHandPosition;
+			}
+		}
 		private bool IsLeftControllerOn()
 		{
-			string[] inputs = UnityEngine.Input.GetJoystickNames();
+			/*string[] inputs = UnityEngine.Input.GetJoystickNames();
 			foreach (string input in inputs)
 			{
 				if (input.ToLower().Contains("left"))
 					return true;
-			}
-			return false;
+			}*/
+			return _isLeftControllerOn && _localPlayer.IsUserInVR();
 		}
 
 		private bool IsRightControllerOn()
 		{
-			string[] inputs = UnityEngine.Input.GetJoystickNames();
+			/*string[] inputs = UnityEngine.Input.GetJoystickNames();
 			foreach (string input in inputs)
 			{
 				if (input.ToLower().Contains("right"))
 					return true;
-			}
-			return false;
+			}*/
+			return _isRightControllerOn && _localPlayer.IsUserInVR();
 		}
 
 		private bool IsOneHanded()
 		{
 			return !IsRightControllerOn() || !IsLeftControllerOn();
 		}
+
+		#endregion
 
 		private DataList GetValidInputs()
 		{
@@ -971,7 +996,7 @@ namespace myro
 				{
 					bool tabPressed = UnityEngine.Input.GetKey(KeyCode.Tab);
 
-					if ((tabPressed && _forceStateOfPanel != EForceState.FORCE_CLOSE && IsPlayerSpeedWithinGrabThreshold())
+					if ((tabPressed && _forceStateOfPanel != EForceState.FORCE_CLOSE)
 						|| _forceStateOfPanel == EForceState.FORCE_OPEN)
 					{
 						if (!IsPanelOpen())
@@ -1005,7 +1030,7 @@ namespace myro
 				{
 					bool tabPressedDown = UnityEngine.Input.GetKeyDown(KeyCode.Tab);
 
-					if (!IsPanelOpen() && ((tabPressedDown && IsPlayerSpeedWithinGrabThreshold()) || _forceStateOfPanel == EForceState.FORCE_OPEN))
+					if (!IsPanelOpen() && (tabPressedDown || _forceStateOfPanel == EForceState.FORCE_OPEN))
 					{
 						OpenPanel();
 						if (ConstraintMode != EConstrained.None)
@@ -1025,6 +1050,7 @@ namespace myro
 			}
 			else
 			{
+				SetControllersOnState();
 				if (_grabbed == EGrabbed.NONE)
 				{
 					if (IsPanelOpen() && PanelTooFarAway())
@@ -1107,15 +1133,17 @@ namespace myro
 
 		private void PlacePanelInFrontOfPlayer(float unscaledDistance = PLACEMENT_DISTANCE_FROM_HEAD)
 		{
-			Quaternion headRot = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).rotation;
-			Vector3 headPos = _localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position;
+			Quaternion headRot = VRCCameraSettings.ScreenCamera.Rotation;
+			Vector3 headPos = VRCCameraSettings.ScreenCamera.Position;
 
 			float distance = ScaleValueToAvatar(unscaledDistance);
 			float scale = ScaleValueToAvatar(PanelScaleOnDesktop) * unscaledDistance / PLACEMENT_DISTANCE_FROM_HEAD;
-			if (distance < 0.08f)
+
+			float nearClipPlane = VRCCameraSettings.ScreenCamera.NearClipPlane + 0.01f;
+			if (distance < nearClipPlane)
 			{
 				//If the avatar is really small, we need to place the menu a bit further away so it doesn't get clipped by the camera
-				distance = 0.08f;
+				distance = nearClipPlane;
 				scale = distance * PanelScaleOnDesktop / 0.3f;
 			}
 			if (scale < MinScale)
