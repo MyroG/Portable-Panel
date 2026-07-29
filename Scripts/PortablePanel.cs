@@ -570,6 +570,8 @@ namespace myro
 			{
 				if (input.ToLower().Contains("left"))
 					return true;
+				if (input.ToLower().Contains("(l)")) // PSVR2 and some niche controllers use this naming scheme
+					return true;
 			}
 			return false;
 		}
@@ -580,6 +582,8 @@ namespace myro
 			foreach (string input in inputs)
 			{
 				if (input.ToLower().Contains("right"))
+					return true;
+				if (input.ToLower().Contains("(r)")) // PSVR2 and some niche controllers use this naming scheme
 					return true;
 			}
 			return false;
