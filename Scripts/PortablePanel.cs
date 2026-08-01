@@ -131,6 +131,8 @@ namespace myro
 		private const float JOYSTICK_DEADZONE = 0.1f;
 		private const float PUSH_PULL_SENSITIVITY = 0.5f;
 
+		private PortablePanelTutorial _panelTutorial;
+
 		void OnEnable()
 		{
 			_localPlayer = Networking.LocalPlayer;
@@ -517,6 +519,10 @@ namespace myro
 		{
 			if (OnPanelOpening())
 			{
+				if (_panelTutorial != null) //If the tutorial is connected, we close it when the player opened the panel
+				{
+					_panelTutorial._PanelGotOpened();
+				}
 				Panel.SetActive(true);
 			}
 			_isPanelOpen = true;
@@ -593,6 +599,10 @@ namespace myro
 			{
 				if (input.ToLower().Contains("left"))
 					return true;
+				if (input.ToLower().Contains("(l)")) // PSVR2 and some niche controllers use this naming scheme
+					return true;
+			}
+			return false;
 			}*/
 			return _isLeftControllerOn && _localPlayer.IsUserInVR();
 		}
@@ -604,6 +614,10 @@ namespace myro
 			{
 				if (input.ToLower().Contains("right"))
 					return true;
+				if (input.ToLower().Contains("(r)")) // PSVR2 and some niche controllers use this naming scheme
+					return true;
+			}
+			return false;
 			}*/
 			return _isRightControllerOn && _localPlayer.IsUserInVR();
 		}
@@ -1157,6 +1171,11 @@ namespace myro
 			SetPanelScale(scale);
 			_panelTransf.LookAt(headPos);
 			_panelTransf.forward = -_panelTransf.forward;
+		}
+
+		internal void RegisterTutorial(PortablePanelTutorial portablePanelTutorial)
+		{
+			_panelTutorial = portablePanelTutorial;
 		}
 
 		#endregion

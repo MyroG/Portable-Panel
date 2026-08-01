@@ -52,7 +52,8 @@ namespace myro
 
 		public override void OnPanelDrop()
 		{
-			if (PanelRigidBody.velocity.magnitude < 0.1f && PanelRigidBody.angularVelocity.magnitude < 0.1f)
+			float velocity = 1.1f * Networking.LocalPlayer.GetAvatarEyeHeightAsMeters();
+			if (PanelRigidBody.velocity.magnitude < velocity && PanelRigidBody.angularVelocity.magnitude < velocity)
 			{
 				//We do not want the panel to slowly fly away when the panel got just barely thrown
 				StopPanel();

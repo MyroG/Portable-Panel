@@ -1,5 +1,6 @@
 ﻿
 using myro;
+using System;
 using TMPro;
 using UdonSharp;
 using UnityEngine;
@@ -10,13 +11,13 @@ using VRC.Udon;
 public class PortablePanelTutorial : UdonSharpBehaviour
 {
 	public PortablePanel PortablePanel;
-	public float PlaceInFrontOfPlayerForXSeconds = 7.0f;
+	public float PlaceInFrontOfPlayerForXSeconds = 10.0f;
 
 	[TextArea(3, 12)]
-	public string TextVR = "To open the panel, bring your hands together, press {0}, and pull apart.\nIn one-handed mode, do the same with one hand.";
+	public string TextVR = "{0} : Press while bringing your hands together, then pull apart to open the panel.\n[Grab+Trigger] in one-handed mode.";
 
 	[TextArea(3, 12)]
-	public string TextDesktop = "To open the panel, press [Tab]";
+	public string TextDesktop = "Press [Tab] to open the panel";
 
 	[Header("Used internally, do not change, except if really needed")]
 	public Image LeftController;
@@ -52,6 +53,8 @@ public class PortablePanelTutorial : UdonSharpBehaviour
 			Debug.LogError("On the TutorialForUser prefab, the Portable Panel reference is null, you need to set it!");
 			return;
 		}
+
+		PortablePanel.RegisterTutorial(this);
 
 		switch (PortablePanel.GestureMode)
 		{
@@ -119,5 +122,14 @@ public class PortablePanelTutorial : UdonSharpBehaviour
 		transform.position = (head.position + head.rotation * Vector3.forward * TUTORIAL_DISTANCE_FROM_FACE);
 		transform.LookAt(head.position);
 		transform.forward = -transform.forward;
+	}
+
+	internal void _PanelGotOpened()
+	{
+		if (PlaceInFrontOfPlayerForXSeconds > 0)
+		{
+			//When we open the panel, we only want to close the tutorial if it isn't placed in world space (so, only in view space)
+ 			_StopTracking();
+		}
 	}
 }
