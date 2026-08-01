@@ -901,7 +901,7 @@ namespace myro
 
 		private bool PanelTooFarAway()
 		{
-			return Vector3.Distance(_localPlayer.GetTrackingData(VRCPlayerApi.TrackingDataType.Head).position, _panelTransf.position)
+			return Vector3.Distance(VRCCameraSettings.ScreenCamera.Position, _panelTransf.position)
 				 > ScaleValueToAvatar(MaxDistanceBeforeClosingThePanel);
 		}
 
